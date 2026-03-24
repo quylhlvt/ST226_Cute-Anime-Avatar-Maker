@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:background="@drawable/bg_choose_color">
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="40dp"
+                android:fontFamily="@font/hvd_comic_serif_pro"
+                android:gravity="center"
+                android:text="@string/choose_color"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                app:layout_constraintTop_toTopOf="@+id/top"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="@+id/top"
+                app:layout_constraintStart_toStartOf="parent"/>
+            <RelativeLayout
+                android:id="@+id/top"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="20dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+
+                <ImageView
+                    android:id="@+id/btnClose"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:gravity="center"
+                    android:layout_alignParentEnd="true"
+                    android:src="@drawable/ic_close_1_color"
+                    app:tint="@color/white" />
+            </RelativeLayout>
+
+            <ir.kotlin.kavehcolorpicker.KavehColorPicker
+                android:id="@+id/colorPickerView"
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:layout_marginHorizontal="13dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintTop_toBottomOf="@id/colorPickerView">
+
+
+
+                <!--                btnDone-->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <RelativeLayout
+                        android:id="@+id/relativeTxtColor"
+                        android:layout_width="0dp"
+                        android:layout_height="24dp"
+                        android:layout_marginHorizontal="3dp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
+
+                        <ir.kotlin.kavehcolorpicker.KavehHueSlider
+                            android:id="@+id/hueSlider"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
+                    </RelativeLayout>
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/btnDone"
+                        android:layout_marginHorizontal="86dp"
+                        android:gravity="center"
+                        android:layout_marginTop="15dp"
+                        android:layout_marginBottom="22dp"
+                        app:layout_constraintDimensionRatio="1.2:0.4"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/relativeTxtColor"
+                        >
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="fitXY"
+                            android:src="@drawable/img_frame_mywork1"
+                            />
+
+                        <ImageView
+                            android:id="@+id/img_dialog2_1_frame"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginHorizontal="3dp"
+                            android:layout_marginTop="3dp"
+                            android:layout_marginBottom="9dp"
+                            android:adjustViewBounds="true"
+                            android:scaleType="fitXY"
+                            android:src="@drawable/img_frame_mywork1_1"
+                            app:layout_constraintDimensionRatio="1.51:0.34"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <TextView
+                            android:id="@+id/txtDone"
+                            style="@style/single_marquee"
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_marginHorizontal="10dp"
+                            android:fontFamily="@font/hvd_comic_serif_pro"
+                            android:gravity="center"
+                            android:text="@string/done"
+                            android:textColor="@color/app_color"
+                            android:textSize="18sp"
+                            app:layout_constraintBottom_toBottomOf="@+id/img_dialog2_1_frame"
+                            app:layout_constraintTop_toTopOf="@+id/img_dialog2_1_frame"
+                            app:outerStrokeColor="@color/app_color"
+                            app:outerStrokeJoinStyle="miter"
+                            app:outerStrokeWidth="1dp" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </LinearLayout>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+</layout>

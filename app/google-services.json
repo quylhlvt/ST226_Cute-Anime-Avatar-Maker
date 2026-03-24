@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1043847851702",
+    "project_id": "st221-avatarmakermyocdesign",
+    "storage_bucket": "st221-avatarmakermyocdesign.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1043847851702:android:28228786fef3dc61630017",
+        "android_client_info": {
+          "package_name": "com.create.avatar.maker.ocdesgin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4eObVY7Yz4D8WaSdA4CUDsk7m4jzf0-U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
