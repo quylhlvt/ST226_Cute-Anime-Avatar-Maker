@@ -6,7 +6,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#80545454"
+        android:background="#3D000000"
         android:gravity="center">
 
         <TextView
@@ -164,7 +164,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="fitXY"
-                    android:src="@drawable/bg_view_mywork" />
+                    android:src="@drawable/bg_view_dialog_exit" />
 
                 <ImageView
                     android:id="@+id/img_dialog1_1_frame"
@@ -223,7 +223,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="fitXY"
-                    android:src="@drawable/bg_view_mywork" />
+                    android:src="@drawable/bg_view_dialog_exit" />
 
                 <ImageView
                     android:id="@+id/img_dialog2_1_frame"

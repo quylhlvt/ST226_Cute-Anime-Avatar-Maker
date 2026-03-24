@@ -126,7 +126,7 @@
                         android:layout_marginHorizontal="10dp"
                         android:fontFamily="@font/janda_manatee_solid"
                         android:gravity="center"
-                        android:text="@string/my_nuggts"
+                        android:text="@string/avatar"
                         android:textColor="@color/white"
                         android:textSize="16sp"
                         style="@style/single_marquee"
@@ -173,7 +173,7 @@
                     android:background="@drawable/bg_btn_my_work_unselect"
                     android:fontFamily="@font/hvd_comic_serif_pro"
                     android:gravity="center"
-                    android:text="@string/my_nuggts"
+                    android:text="@string/avatar"
                     android:textColor="@color/app_color"
                     style="@style/single_marquee"
                     android:freezesText="true"
@@ -250,7 +250,7 @@
 
             <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/tvNoItem"
-                android:layout_width="139dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 style="@style/single_marquee"
                 android:gravity="center"
@@ -310,7 +310,7 @@
             android:id="@+id/layoutSticker"
             android:layout_width="match_parent"
             android:layout_height="46dp"
-            android:layout_marginBottom="15dp"
+            android:layout_marginBottom="10dp"
             android:layout_marginHorizontal="8dp"
             android:orientation="horizontal"
             app:layout_constraintBottom_toTopOf="@+id/llBottom">

@@ -402,10 +402,10 @@
             app:layout_constraintGuide_percent="0.55" />
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/btnDice"
-            android:layout_width="40dp"
+            android:layout_width="80dp"
             android:layout_height="40dp"
             android:elevation="1dp"
-            android:visibility="gone"
+            android:visibility="invisible"
             android:layout_marginEnd="16dp"
 
             android:src="@drawable/imv_random"

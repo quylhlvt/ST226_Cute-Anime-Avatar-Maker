@@ -13,6 +13,7 @@ import com.cute.anime.avatarmaker.utils.shareApp
 import com.cute.anime.avatarmaker.utils.unItem
 import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.databinding.ActivitySettingBinding
+import com.cute.anime.avatarmaker.utils.onClick
 import com.cute.anime.avatarmaker.utils.show
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -52,7 +53,7 @@ class SettingActivity : AbsBaseActivity<ActivitySettingBinding>() {
             llRateUs.onSingleClick {
                 rateUs(0)
             }
-            llShareApp.onSingleClick {
+            llShareApp.onClick {
                 shareApp()
             }
             llPrivacy.onSingleClick {

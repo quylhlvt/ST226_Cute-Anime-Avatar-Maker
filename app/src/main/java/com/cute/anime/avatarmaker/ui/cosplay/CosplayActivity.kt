@@ -107,6 +107,7 @@ class CosplayActivity  : AbsBaseActivity<ActivityCosplayBinding>() {
         binding.apply {
             tv1.isSelected = true
             tv2.isSelected = true
+            txtTitle.isSelected = true
             btnCosplay.isEnabled = false
             btnRandomize.isEnabled = false
             btnCosplay.alpha = 0.5f

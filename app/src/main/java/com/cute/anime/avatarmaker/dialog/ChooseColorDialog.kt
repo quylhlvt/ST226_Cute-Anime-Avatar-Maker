@@ -17,6 +17,7 @@ class ChooseColorDialog(context: Activity) : BaseDialog<DialogColorPickerBinding
         binding.colorPickerView.hueSliderView = binding.hueSlider
         updateHexText(color)
         binding.txtDone.isSelected=true
+        binding.tvTitle.isSelected=true
         binding.txtCancel.isSelected=true
     }
 

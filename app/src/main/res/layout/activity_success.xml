@@ -164,7 +164,7 @@
                     android:layout_marginHorizontal="10dp"
                     android:fontFamily="@font/janda_manatee_solid"
                     android:gravity="center"
-                    android:text="@string/my_creation"
+                    android:text="@string/my_avatar"
                     android:textColor="@color/app_color"
                     android:textSize="18sp"
                     style="@style/single_marquee"

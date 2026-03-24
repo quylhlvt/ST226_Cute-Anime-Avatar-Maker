@@ -73,7 +73,7 @@
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_btn_share_view"
+                    android:background="@drawable/bg_dialog_cosplay"
                     android:fontFamily="@font/roboto_medium"
                     android:gravity="center"
                     android:paddingVertical="8dp"
