@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Avatar Maker: My OC Design</string>
+    <string name="app_name" translatable="false">Cute Anime: Avatar Maker</string>
     <string name="this_action_may_contain_advertising">This action can contain ads</string>
     <string name="language">Language</string>
     <string name="next">Next</string>
@@ -20,7 +20,7 @@
     <string name="rate_us_0">You have not rated it yet!</string>
     <string name="create">CREATE</string>
     <string name="customize">CUSTOMIZE</string>
-    <string name="save">SAVE</string>
+    <string name="save">Save</string>
     <string name="wait_a_few_second">Wait a minute</string>
     <string name="tv_cancel">Cancel</string>
     <string name="successfully">Successfully</string>

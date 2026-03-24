@@ -7,7 +7,7 @@
 
         <variable
             name="mTutorialModel"
-            type="com.create.avatar.maker.ocdesgin.data.model.TutorialModel" />
+            type="com.cute.anime.avatarmaker.data.model.TutorialModel" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

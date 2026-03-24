@@ -139,7 +139,7 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
 
-                        <com.create.avatar.maker.ocdesgin.utils.OuterStrokeTextView
+                        <com.cute.anime.avatarmaker.utils.OuterStrokeTextView
                             android:paddingStart="2dp"
                             android:id="@+id/tv1"
                             style="@style/single_marquee"
@@ -205,7 +205,7 @@
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
 
-                        <com.create.avatar.maker.ocdesgin.utils.OuterStrokeTextView
+                        <com.cute.anime.avatarmaker.utils.OuterStrokeTextView
                             android:id="@+id/tv2"
                             style="@style/single_marquee"
                             android:layout_width="0dp"
@@ -273,7 +273,7 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
 
-                        <com.create.avatar.maker.ocdesgin.utils.OuterStrokeTextView
+                        <com.cute.anime.avatarmaker.utils.OuterStrokeTextView
                             android:id="@+id/tv3"
                             style="@style/single_marquee"
                             android:layout_width="0dp"
@@ -340,7 +340,7 @@
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintTop_toTopOf="parent" />
 
-                        <com.create.avatar.maker.ocdesgin.utils.OuterStrokeTextView
+                        <com.cute.anime.avatarmaker.utils.OuterStrokeTextView
                             android:id="@+id/tv4"
                             style="@style/single_marquee"
                             android:layout_width="0dp"

@@ -9,16 +9,16 @@ plugins {
 }
 
 android {
-    namespace 'com.create.avatar.maker.ocdesgin'
+    namespace 'com.cute.anime.avatarmaker'
     compileSdk 36
     defaultConfig {
-        applicationId "com.create.avatar.maker.ocdesgin"
+        applicationId "com.cute.anime.avatarmaker"
         minSdk 24
         targetSdk 36
         versionCode 1
         versionName "1.0.0"
         def formattedDate = new Date().format('MM.dd.yyyy')
-        archivesBaseName = "Avatar_Maker_My_OC_Design${versionName}_${formattedDate}"
+        archivesBaseName = "Cute_Anime_Avatar_Maker${versionName}_${formattedDate}"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

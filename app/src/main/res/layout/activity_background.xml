@@ -90,7 +90,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/llTop"
             >
-        <com.create.avatar.maker.ocdesgin.custom.DrawView
+        <com.cute.anime.avatarmaker.custom.DrawView
             android:id="@+id/drawView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -108,7 +108,7 @@
                 android:scaleType="fitXY"
                 />
 
-        </com.create.avatar.maker.ocdesgin.custom.DrawView>
+        </com.cute.anime.avatarmaker.custom.DrawView>
         </com.google.android.material.card.MaterialCardView>
 
         <ImageView

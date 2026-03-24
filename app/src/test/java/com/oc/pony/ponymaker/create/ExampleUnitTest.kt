@@ -1,4 +1,4 @@
-package com.create.avatar.maker.ocdesgin
+package com.cute.anime.avatarmaker
 
 import org.junit.Assert
 import org.junit.Test

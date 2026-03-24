@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "1043847851702",
-    "project_id": "st221-avatarmakermyocdesign",
-    "storage_bucket": "st221-avatarmakermyocdesign.firebasestorage.app"
+    "project_number": "111859859192",
+    "project_id": "st226-cuteanimeavatarmaker",
+    "storage_bucket": "st226-cuteanimeavatarmaker.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1043847851702:android:28228786fef3dc61630017",
+        "mobilesdk_app_id": "1:111859859192:android:9e703b79b8ddaad001050d",
         "android_client_info": {
-          "package_name": "com.create.avatar.maker.ocdesgin"
+          "package_name": "com.cute.anime.avatarmaker"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyC4eObVY7Yz4D8WaSdA4CUDsk7m4jzf0-U"
+          "current_key": "AIzaSyCdztl_Vr8BLg3F2N_kF55uQA_p98TavWc"
         }
       ],
       "services": {
