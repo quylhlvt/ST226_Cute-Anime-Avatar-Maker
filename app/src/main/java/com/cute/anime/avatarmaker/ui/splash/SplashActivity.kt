@@ -85,24 +85,28 @@ class SplashActivity : AbsBaseActivity<ActivitySplashBinding>() {
                                 sortedMap.forEach { key, list ->
                                     val bodyPartList = arrayListOf<BodyPartModel>()
                                     list.forEach { x10 ->
+                                        // ✅ Skip item quantity = 0
+                                        if (x10.quantity <= 0) return@forEach
+
                                         val colorList = arrayListOf<ColorModel>()
                                         val thumbList = arrayListOf<String>()
 
-                                        // Build thumb list cho tất cả items
-                                        for (i in 1..x10.quantity) {
+                                        val halfQuantity = maxOf(1, x10.quantity / 2)
+
+                                        for (i in 1..halfQuantity) {
                                             thumbList.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/thumb_${i}.png")
                                         }
 
                                         if (x10.colorArray.isEmpty()) {
                                             val pathList = arrayListOf<String>()
-                                            for (i in 1..x10.quantity) {
+                                            for (i in 1..halfQuantity) {
                                                 pathList.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${i}.png")
                                             }
                                             colorList.add(ColorModel("", pathList))
                                         } else {
                                             x10.colorArray.split(",").forEach { color ->
                                                 val pathList = arrayListOf<String>()
-                                                for (i in 1..x10.quantity) {
+                                                for (i in 1..x10.quantity) {  // ✅ có màu → full quantity
                                                     pathList.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${color}/${i}.png")
                                                 }
                                                 colorList.add(ColorModel(color, pathList))
@@ -124,20 +128,21 @@ class SplashActivity : AbsBaseActivity<ActivitySplashBinding>() {
                                         true
                                     )
 
+                                    // ✅ SAU - thêm isNotEmpty() giống SplashActivity
                                     dataModel.bodyPart.forEach { mbodyPath ->
                                         if (mbodyPath.icon.substringBeforeLast("/")
                                                 .substringAfterLast("/").substringAfter("-") == "1"
                                         ) {
-                                            mbodyPath.listPath.forEach { colorModel ->
-                                                if (colorModel.listPath[0] != "dice") {
-                                                    colorModel.listPath.add(0, "dice")
+                                            mbodyPath.listPath.forEach {
+                                                if (it.listPath.isNotEmpty() && it.listPath[0] != "dice") {
+                                                    it.listPath.add(0, "dice")
                                                 }
                                             }
                                         } else {
-                                            mbodyPath.listPath.forEach { colorModel ->
-                                                if (colorModel.listPath[0] != "none") {
-                                                    colorModel.listPath.add(0, "none")
-                                                    colorModel.listPath.add(1, "dice")
+                                            mbodyPath.listPath.forEach {
+                                                if (it.listPath.isNotEmpty() && it.listPath[0] != "none") {
+                                                    it.listPath.add(0, "none")
+                                                    it.listPath.add(1, "dice")
                                                 }
                                             }
                                         }

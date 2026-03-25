@@ -21,12 +21,14 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
+import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.data.callapi.reponse.DataResponse
 import com.cute.anime.avatarmaker.data.callapi.reponse.LoadingStatus
 import com.cute.anime.avatarmaker.data.model.BodyPartModel
 import com.cute.anime.avatarmaker.data.model.ColorModel
 import com.cute.anime.avatarmaker.data.model.CustomModel
 import com.cute.anime.avatarmaker.data.repository.ApiRepository
+import com.cute.anime.avatarmaker.databinding.ActivityMyCreationBinding
 import com.cute.anime.avatarmaker.dialog.CreateNameDialog
 import com.cute.anime.avatarmaker.dialog.DialogExit
 import com.cute.anime.avatarmaker.ui.customview.CustomviewActivity
@@ -43,6 +45,7 @@ import com.cute.anime.avatarmaker.utils.PermissionHelper
 import com.cute.anime.avatarmaker.utils.SharedPreferenceUtils
 import com.cute.anime.avatarmaker.utils.hide
 import com.cute.anime.avatarmaker.utils.isInternetAvailable
+import com.cute.anime.avatarmaker.utils.isNetworkConnected
 import com.cute.anime.avatarmaker.utils.newIntent
 import com.cute.anime.avatarmaker.utils.onClick
 import com.cute.anime.avatarmaker.utils.onClickCustom
@@ -54,18 +57,16 @@ import com.cute.anime.avatarmaker.utils.share.whatsapp.IdGenerator
 import com.cute.anime.avatarmaker.utils.share.whatsapp.StickerBook
 import com.cute.anime.avatarmaker.utils.share.whatsapp.StickerPack
 import com.cute.anime.avatarmaker.utils.share.whatsapp.WhatsappSharingActivity
+import com.cute.anime.avatarmaker.utils.shareListFiles
 import com.cute.anime.avatarmaker.utils.show
 import com.cute.anime.avatarmaker.utils.showDialogNotifiListener
 import com.cute.anime.avatarmaker.utils.showSystemUI
 import com.cute.anime.avatarmaker.utils.showToast
 import com.cute.anime.avatarmaker.utils.toList
-import com.cute.anime.avatarmaker.R
-import com.cute.anime.avatarmaker.databinding.ActivityMyCreationBinding
-import com.cute.anime.avatarmaker.utils.shareListFiles
-
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
@@ -163,27 +164,37 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
                                     "loadingnetwork"
                                 ).show()
                                 return@getAvatar
-                            }
-                            var index =
-                                DataHelper.arrBlackCentered.indexOfFirst { it.avt == avatar.pathAvatar }
-                            if (index > -1) {
-                                startActivity(
-                                    Intent(
-                                        this@MyCreationActivity,
-                                        CustomviewActivity::class.java
-                                    ).putExtra("data", index)
-                                        .putExtra("arr", toList(avatar.arr))
-                                        .putExtra("checkEdit", true)
-                                        .putExtra("isFlipped", avatar.isFlipped)
-                                        .putExtra("fileName", File(avatar.path).name)
-                                )
                             } else {
                                 lifecycleScope.launch {
-                                    val dialog = DialogExit(
-                                        this@MyCreationActivity,
-                                        "awaitdata"
-                                    )
-                                    dialog.show()
+                                    val hasInternet = withContext(Dispatchers.IO) {
+                                        isNetworkConnected(this@MyCreationActivity)
+                                    }
+                                    if (hasInternet && avatar.online == true) {
+                                        var index =
+                                            DataHelper.arrBlackCentered.indexOfFirst { it.avt == avatar.pathAvatar }
+                                        if (index > -1) {
+                                            startActivity(
+                                                Intent(
+                                                    this@MyCreationActivity,
+                                                    CustomviewActivity::class.java
+                                                ).putExtra("data", index)
+                                                    .putExtra("arr", toList(avatar.arr))
+                                                    .putExtra("checkEdit", true)
+                                                    .putExtra("isFlipped", avatar.isFlipped)
+                                                    .putExtra("fileName", File(avatar.path).name)
+                                            )
+                                        } else {
+                                                val dialog = DialogExit(
+                                                    this@MyCreationActivity,
+                                                    "awaitdata"
+                                                )
+                                                dialog.show()
+
+                                        }
+                                    } else {
+                                        val dialog = DialogExit(this@MyCreationActivity, "networked")
+                                        dialog.show()
+                                    }
                                 }
                             }
                         }
@@ -302,7 +313,9 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
                         } else {
                             arrCheckTick.add(pos)
                             if (arrCheckTick.size == arrPathDesign.size) {
-                                this@MyCreationActivity.binding.imvTickAll.setImageResource(R.drawable.imv_tick_all_true)
+                                this@MyCreationActivity.binding.imvTickAll.setImageResource(
+                                    R.drawable.imv_tick_all_true
+                                )
                             }
                         }
                         submitList(arrPathDesign)
@@ -348,7 +361,8 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
                     LoadingStatus.Success -> {
                         if (DataHelper.arrBlackCentered.isNotEmpty() && !DataHelper.arrBlackCentered[0].checkDataOnline) {
                             checkCallingDataOnline = false
-                            val listA = (it as DataResponse.DataSuccess).body ?: return@observe
+                            val listA =
+                                (it as DataResponse.DataSuccess).body ?: return@observe
                             checkCallingDataOnline = true
                             val sortedMap = listA
                                 .toList() // Chuyển map -> list<Pair<String, List<X10>>>
@@ -399,7 +413,8 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
                                     )
                                 dataModel.bodyPart.forEach { mbodyPath ->
                                     if (mbodyPath.icon.substringBeforeLast("/")
-                                            .substringAfterLast("/").substringAfter("-") == "1"
+                                            .substringAfterLast("/")
+                                            .substringAfter("-") == "1"
                                     ) {
                                         mbodyPath.listPath.forEach {
                                             if (it.listPath[0] != "dice") {
@@ -542,7 +557,11 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
                 }
 
                 override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
-                override fun onTouchEvent(recyclerView: RecyclerView, motionEvent: MotionEvent) {}
+                override fun onTouchEvent(
+                    recyclerView: RecyclerView,
+                    motionEvent: MotionEvent
+                ) {
+                }
             })
             rcvDesign.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
                 override fun onInterceptTouchEvent(
@@ -561,7 +580,11 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
                 }
 
                 override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
-                override fun onTouchEvent(recyclerView: RecyclerView, motionEvent: MotionEvent) {}
+                override fun onTouchEvent(
+                    recyclerView: RecyclerView,
+                    motionEvent: MotionEvent
+                ) {
+                }
             })
             imvBack.onSingleClick {
                 startActivity(
@@ -923,7 +946,10 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
         }
     }
 
-    private fun getUrisFromPaths(context: Context, paths: ArrayList<String>): ArrayList<Uri> {
+    private fun getUrisFromPaths(
+        context: Context,
+        paths: ArrayList<String>
+    ): ArrayList<Uri> {
         val uriList = ArrayList<Uri>()
 
         for (path in paths) {
@@ -939,13 +965,15 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
             options.inJustDecodeBounds = false
             options.inSampleSize = calculateInSampleSize(options, 512, 512)
 
-            val bitmap = BitmapFactory.decodeFile(originalFile.absolutePath, options) ?: continue
+            val bitmap =
+                BitmapFactory.decodeFile(originalFile.absolutePath, options) ?: continue
 
             // Resize chính xác 512x512
             val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 512, 512, true)
 
             // Chuyển sang WEBP để nhẹ hơn (Telegram thích .webp hơn .png)
-            val stickerFile = File(context.cacheDir, "sticker_${System.currentTimeMillis()}.webp")
+            val stickerFile =
+                File(context.cacheDir, "sticker_${System.currentTimeMillis()}.webp")
 
             FileOutputStream(stickerFile).use { out ->
                 resizedBitmap.compress(Bitmap.CompressFormat.WEBP, 90, out)

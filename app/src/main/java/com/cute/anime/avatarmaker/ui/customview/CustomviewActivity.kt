@@ -7,20 +7,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.activity.viewModels
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.core.content.ContextCompat
 import androidx.core.view.isInvisible
-import com.cute.anime.avatarmaker.base.AbsBaseActivity
-import com.cute.anime.avatarmaker.data.model.AvatarModel
-import com.cute.anime.avatarmaker.data.model.BodyPartModel
-import com.cute.anime.avatarmaker.dialog.DialogExit
-import com.cute.anime.avatarmaker.ui.background.BackgroundActivity
-import com.cute.anime.avatarmaker.utils.DataHelper
-import com.cute.anime.avatarmaker.utils.fromList
-import com.cute.anime.avatarmaker.utils.isInternetAvailable
-import com.cute.anime.avatarmaker.utils.onSingleClick
-import com.cute.anime.avatarmaker.utils.saveBitmap
-import com.cute.anime.avatarmaker.utils.showToast
-import com.cute.anime.avatarmaker.utils.viewToBitmap
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.Priority
 import com.bumptech.glide.load.DataSource
@@ -29,14 +17,27 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.cute.anime.avatarmaker.R
+import com.cute.anime.avatarmaker.base.AbsBaseActivity
+import com.cute.anime.avatarmaker.data.model.AvatarModel
+import com.cute.anime.avatarmaker.data.model.BodyPartModel
 import com.cute.anime.avatarmaker.databinding.ActivityCustomizeBinding
+import com.cute.anime.avatarmaker.dialog.DialogExit
+import com.cute.anime.avatarmaker.ui.background.BackgroundActivity
+import com.cute.anime.avatarmaker.utils.DataHelper
 import com.cute.anime.avatarmaker.utils.DataHelper.arrBlackCentered
+import com.cute.anime.avatarmaker.utils.fromList
 import com.cute.anime.avatarmaker.utils.inhide
+import com.cute.anime.avatarmaker.utils.isInternetAvailable
+import com.cute.anime.avatarmaker.utils.isNetworkConnected
+import com.cute.anime.avatarmaker.utils.onSingleClick
+import com.cute.anime.avatarmaker.utils.saveBitmap
 import com.cute.anime.avatarmaker.utils.show
+import com.cute.anime.avatarmaker.utils.showToast
+import com.cute.anime.avatarmaker.utils.viewToBitmap
 import dagger.hilt.android.AndroidEntryPoint
-import kotlin.collections.get
-import kotlin.compareTo
-import kotlin.text.get
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
@@ -52,6 +53,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
     val adapterPart by lazy {
         PartAdapter()
     }
+
     private fun submitPartList(
         navPos: Int = adapterNav.posNav,
         colorPos: Int = adapterColor.posColor,
@@ -61,6 +63,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
         adapterPart.listThumb = getThumbList(navPos, actualList)
         adapterPart.submitList(actualList, commitCallback)
     }
+
     private val iconToIndexMap = mutableMapOf<String, Int>()
     private fun getThumbList(navPos: Int, actualList: List<String>): List<String> {
         val thumbList = listData[navPos].listThumbPath
@@ -73,6 +76,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
             }
         }
     }
+
     private val loadingLock = Any()
     private var canSave = true
     override fun getLayoutId(): Int = R.layout.activity_customize
@@ -103,7 +107,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
 //            )
 //        }
 
-        binding.txtTitle.post { binding.txtTitle.isSelected =true }
+        binding.txtTitle.post { binding.txtTitle.isSelected = true }
         val isFlipped = intent.getBooleanExtra("isFlipped", false)
 //        binding.txtTitle.setTextColor(ContextCompat.getColor(this,R.color.white))
         binding.btnSave.isSelected = true
@@ -176,6 +180,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
             finish()
         }
     }
+
     private fun preloadInitialImages(onComplete: () -> Unit) {
         val pathsToLoad = mutableListOf<Pair<AppCompatImageView, String>>()
 
@@ -218,6 +223,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                         if (remaining.decrementAndGet() == 0) binding.root.post { onComplete() }
                         return false
                     }
+
                     override fun onResourceReady(
                         resource: Drawable?, model: Any?,
                         target: Target<Drawable>?, dataSource: DataSource?,
@@ -232,6 +238,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
         }
 
     }
+
     var listImg = arrayListOf<AppCompatImageView>()
     fun putImage(
         icon: String,
@@ -250,6 +257,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
             )
         }
     }
+
     // Thêm biến đếm số ảnh đang load
     private var loadingImagesCount = 0
 
@@ -321,7 +329,9 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
             }
         }
     }
+
     var listData = arrayListOf<BodyPartModel>()
+
     //0 - path, 1 - color
     var arrInt = arrayListOf<ArrayList<Int>>()
     var blackCentered = 0
@@ -340,34 +350,39 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
         blackCentered = intent.getIntExtra("data", 0)
         arrIntHottrend = intent.getSerializableExtra("arr") as? ArrayList<ArrayList<Int>>
         var checkFirst = true
+
         repeat(DataHelper.arrBlackCentered[blackCentered].bodyPart.size) {
             DataHelper.listImageSortView.add("")
             DataHelper.listImage.add("")
         }
+
+        val listSize = DataHelper.listImageSortView.size  // ✅ cache size
+
         DataHelper.arrBlackCentered[blackCentered].bodyPart.forEach {
             val (x, y) = it.icon.substringBeforeLast("/").substringAfterLast("/").split("-")
                 .map { it.toInt() }
-            DataHelper.listImageSortView[x - 1] = it.icon
-            DataHelper.listImage[y - 1] = it.icon
+
+            // ✅ Chỉ set nếu index hợp lệ
+            if (x - 1 < listSize) DataHelper.listImageSortView[x - 1] = it.icon
+            if (y - 1 < listSize) DataHelper.listImage[y - 1] = it.icon
             iconToIndexMap[it.icon] = x - 1
         }
-        //thu tu navi
+
         DataHelper.listImage.forEachIndexed { index, icon ->
-            var x = arrBlackCentered[blackCentered].bodyPart.indexOfFirst { it.icon == icon }
-            var y = DataHelper.listImageSortView.indexOf(icon)
+            val x = arrBlackCentered[blackCentered].bodyPart.indexOfFirst { it.icon == icon }
+            val y = DataHelper.listImageSortView.indexOf(icon)
             if (x != -1) {
                 arrShowColor.add(true)
                 listData.add(arrBlackCentered[blackCentered].bodyPart[x])
                 if (checkFirst) {
                     checkFirst = false
-//                    arrIntHottrend thu tu view
-                    if (arrIntHottrend != null) {
+                    if (arrIntHottrend != null && y >= 0 && y < arrIntHottrend!!.size) {
                         arrInt.add(arrayListOf(arrIntHottrend!![y][0], arrIntHottrend!![y][1]))
                     } else {
                         arrInt.add(arrayListOf(1, 0))
                     }
                 } else {
-                    if (arrIntHottrend != null) {
+                    if (arrIntHottrend != null && y >= 0 && y < arrIntHottrend!!.size) {
                         arrInt.add(arrayListOf(arrIntHottrend!![y][0], arrIntHottrend!![y][1]))
                     } else {
                         arrInt.add(arrayListOf(0, 0))
@@ -376,6 +391,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
             }
         }
     }
+
     var checkRevert = true
     var checkHide = false
     override fun initAction() {
@@ -384,14 +400,23 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                     applicationContext
                 )
             ) {
-                val recyclerState = binding.rcvPart.layoutManager?.onSaveInstanceState()
-                adapterColor.setPos(it)
-                adapterColor.submitList(listData[adapterNav.posNav].listPath)
-                arrInt[adapterNav.posNav][1] = it
-                submitPartList(commitCallback = {
-                    binding.rcvPart.layoutManager?.onRestoreInstanceState(recyclerState)
-                })
-                putImage(listData[adapterNav.posNav].icon, adapterPart.posPath)
+                lifecycleScope.launch {
+                    val hasInternet = withContext(Dispatchers.IO) {
+                        isNetworkConnected(this@CustomviewActivity)
+                    }
+                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                        DialogExit(this@CustomviewActivity, "networked").show()
+                    } else {
+                        val recyclerState = binding.rcvPart.layoutManager?.onSaveInstanceState()
+                        adapterColor.setPos(it)
+                        adapterColor.submitList(listData[adapterNav.posNav].listPath)
+                        arrInt[adapterNav.posNav][1] = it
+                        submitPartList(commitCallback = {
+                            binding.rcvPart.layoutManager?.onRestoreInstanceState(recyclerState)
+                        })
+                        putImage(listData[adapterNav.posNav].icon, adapterPart.posPath)
+                    }
+                }
             } else {
                 DialogExit(
                     this@CustomviewActivity,
@@ -404,55 +429,64 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                     applicationContext
                 )
             ) {
-                val newPos = it
+                lifecycleScope.launch {
+                    val hasInternet = withContext(Dispatchers.IO) {
+                        isNetworkConnected(this@CustomviewActivity)
+                    }
+                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                        DialogExit(this@CustomviewActivity, "networked").show()
+                    } else {
+                        val newPos = it
 
-                // Validate và chuẩn bị indices
-                val currentBodyPart = listData[newPos]
-                val maxColorIndex = currentBodyPart.listPath.size - 1
-                val safeColorIndex = arrInt[newPos][1].coerceIn(0, maxColorIndex)
+                        // Validate và chuẩn bị indices
+                        val currentBodyPart = listData[newPos]
+                        val maxColorIndex = currentBodyPart.listPath.size - 1
+                        val safeColorIndex = arrInt[newPos][1].coerceIn(0, maxColorIndex)
 
-                // Cập nhật arrInt nếu cần
-                if (arrInt[newPos][1] != safeColorIndex) {
-                    arrInt[newPos][1] = safeColorIndex
+                        // Cập nhật arrInt nếu cần
+                        if (arrInt[newPos][1] != safeColorIndex) {
+                            arrInt[newPos][1] = safeColorIndex
+                        }
+
+                        val maxPartIndex =
+                            currentBodyPart.listPath[safeColorIndex].listPath.size - 1
+                        val safePartIndex = arrInt[newPos][0].coerceIn(0, maxPartIndex)
+
+                        if (arrInt[newPos][0] != safePartIndex) {
+                            arrInt[newPos][0] = safePartIndex
+                        }
+
+                        // Bắt đầu cập nhật UI
+                        adapterNav.setPos(newPos)
+                        adapterNav.submitList(listData)
+                        // Set color adapter position trước
+                        adapterColor.setPos(safeColorIndex)
+                        // Cập nhật visibility
+                        updateColorSectionVisibility(newPos)
+                        // Submit color list nếu cần
+                        val hasMultipleColors = currentBodyPart.listPath.size > 1
+                        if (hasMultipleColors && arrShowColor[newPos]) {
+                            adapterColor.submitList(currentBodyPart.listPath)
+                            binding.root.postDelayed({
+                                binding.rcvColor.smoothScrollToPosition(safeColorIndex)
+                            }, 100)
+                        } else if (hasMultipleColors) {
+                            adapterColor.submitList(currentBodyPart.listPath)
+                        }
+
+                        // Cập nhật part adapter
+                        if (adapterColor.posColor == safeColorIndex) {
+                            adapterPart.setPos(safePartIndex)
+                        } else {
+                            adapterPart.setPos(-1)
+                        }
+                        submitPartList(navPos = it, colorPos = arrInt[it][1])
+
+                        binding.root.postDelayed({
+                            binding.rcvPart.smoothScrollToPosition(safePartIndex)
+                        }, 100)
+                    }
                 }
-
-                val maxPartIndex = currentBodyPart.listPath[safeColorIndex].listPath.size - 1
-                val safePartIndex = arrInt[newPos][0].coerceIn(0, maxPartIndex)
-
-                if (arrInt[newPos][0] != safePartIndex) {
-                    arrInt[newPos][0] = safePartIndex
-                }
-
-                // Bắt đầu cập nhật UI
-                adapterNav.setPos(newPos)
-                adapterNav.submitList(listData)
-                // Set color adapter position trước
-                adapterColor.setPos(safeColorIndex)
-                // Cập nhật visibility
-                updateColorSectionVisibility(newPos)
-                // Submit color list nếu cần
-                val hasMultipleColors = currentBodyPart.listPath.size > 1
-                if (hasMultipleColors && arrShowColor[newPos]) {
-                    adapterColor.submitList(currentBodyPart.listPath)
-                    binding.root.postDelayed({
-                        binding.rcvColor.smoothScrollToPosition(safeColorIndex)
-                    }, 100)
-                } else if (hasMultipleColors) {
-                    adapterColor.submitList(currentBodyPart.listPath)
-                }
-
-                // Cập nhật part adapter
-                if (adapterColor.posColor == safeColorIndex) {
-                    adapterPart.setPos(safePartIndex)
-                } else {
-                    adapterPart.setPos(-1)
-                }
-                submitPartList(navPos = it, colorPos = arrInt[it][1])
-
-                binding.root.postDelayed({
-                    binding.rcvPart.smoothScrollToPosition(safePartIndex)
-                }, 100)
-
             } else {
                 DialogExit(this@CustomviewActivity, "loadingnetwork").show()
             }
@@ -462,62 +496,74 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                     this@CustomviewActivity
                 )
             ) {
-                when (type) {
-                    "none" -> {
-                        adapterPart.setPos(it)
-                        submitPartList()
-                        arrInt[adapterNav.posNav][0] = it
-                        arrInt[adapterNav.posNav][1] = adapterColor.posColor
-                        putImage(listData[adapterNav.posNav].icon, it, true)
+                lifecycleScope.launch {
+                    val hasInternet = withContext(Dispatchers.IO) {
+                        isNetworkConnected(this@CustomviewActivity)
                     }
-                    "dice" -> {
-                        when (listData[adapterNav.posNav].listPath[adapterColor.posColor].listPath[0]) {
+                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                        DialogExit(this@CustomviewActivity, "networked").show()
+                    } else {
+                        when (type) {
                             "none" -> {
-                                if (listData[adapterNav.posNav].listPath[adapterColor.posColor].listPath.size > 3) {
-                                    var x =
-                                        (2..<listData[adapterNav.posNav].listPath[adapterColor.posColor].listPath.size).random()
-                                    adapterPart.setPos(x)
-                                    submitPartList()
-                                    arrInt[adapterNav.posNav][0] = x
-                                    arrInt[adapterNav.posNav][1] = adapterColor.posColor
-                                    putImage(listData[adapterNav.posNav].icon, x)
-                                } else {
-                                    adapterPart.setPos(2)
-                                    submitPartList()
-                                    arrInt[adapterNav.posNav][0] = 2
-                                    arrInt[adapterNav.posNav][1] = adapterColor.posColor
-                                    putImage(listData[adapterNav.posNav].icon, 2)
+                                adapterPart.setPos(it)
+                                submitPartList()
+                                arrInt[adapterNav.posNav][0] = it
+                                arrInt[adapterNav.posNav][1] = adapterColor.posColor
+                                putImage(listData[adapterNav.posNav].icon, it, true)
+                            }
+
+                            "dice" -> {
+                                when (listData[adapterNav.posNav].listPath[adapterColor.posColor].listPath[0]) {
+                                    "none" -> {
+                                        if (listData[adapterNav.posNav].listPath[adapterColor.posColor].listPath.size > 3) {
+                                            var x =
+                                                (2..<listData[adapterNav.posNav].listPath[adapterColor.posColor].listPath.size).random()
+                                            adapterPart.setPos(x)
+                                            submitPartList()
+                                            arrInt[adapterNav.posNav][0] = x
+                                            arrInt[adapterNav.posNav][1] = adapterColor.posColor
+                                            putImage(listData[adapterNav.posNav].icon, x)
+                                        } else {
+                                            adapterPart.setPos(2)
+                                            submitPartList()
+                                            arrInt[adapterNav.posNav][0] = 2
+                                            arrInt[adapterNav.posNav][1] = adapterColor.posColor
+                                            putImage(listData[adapterNav.posNav].icon, 2)
+                                        }
+                                    }
+
+                                    "dice" -> {
+                                        if (listData[adapterNav.posNav].listPath[adapterColor.posColor].listPath.size > 2) {
+                                            var x =
+                                                (1..<listData[adapterNav.posNav].listPath[adapterColor.posColor].listPath.size).random()
+                                            adapterPart.setPos(x)
+                                            submitPartList()
+                                            arrInt[adapterNav.posNav][0] = x
+                                            arrInt[adapterNav.posNav][1] = adapterColor.posColor
+                                            putImage(listData[adapterNav.posNav].icon, x)
+                                        } else {
+                                            adapterPart.setPos(1)
+                                            submitPartList()
+                                            arrInt[adapterNav.posNav][0] = 1
+                                            arrInt[adapterNav.posNav][1] = adapterColor.posColor
+                                            putImage(listData[adapterNav.posNav].icon, 1)
+                                            showToast(
+                                                this@CustomviewActivity,
+                                                R.string.the_layer_have_only_one_item
+                                            )
+                                        }
+                                    }
                                 }
                             }
-                            "dice" -> {
-                                if (listData[adapterNav.posNav].listPath[adapterColor.posColor].listPath.size > 2) {
-                                    var x =
-                                        (1..<listData[adapterNav.posNav].listPath[adapterColor.posColor].listPath.size).random()
-                                    adapterPart.setPos(x)
-                                    submitPartList()
-                                    arrInt[adapterNav.posNav][0] = x
-                                    arrInt[adapterNav.posNav][1] = adapterColor.posColor
-                                    putImage(listData[adapterNav.posNav].icon, x)
-                                } else {
-                                    adapterPart.setPos(1)
-                                    submitPartList()
-                                    arrInt[adapterNav.posNav][0] = 1
-                                    arrInt[adapterNav.posNav][1] = adapterColor.posColor
-                                    putImage(listData[adapterNav.posNav].icon, 1)
-                                    showToast(
-                                        this@CustomviewActivity,
-                                        R.string.the_layer_have_only_one_item
-                                    )
-                                }
+
+                            else -> {
+                                adapterPart.setPos(it)
+                                submitPartList()
+                                arrInt[adapterNav.posNav][0] = it
+                                arrInt[adapterNav.posNav][1] = adapterColor.posColor
+                                putImage(listData[adapterNav.posNav].icon, it)
                             }
                         }
-                    }
-                    else -> {
-                        adapterPart.setPos(it)
-                        submitPartList()
-                        arrInt[adapterNav.posNav][0] = it
-                        arrInt[adapterNav.posNav][1] = adapterColor.posColor
-                        putImage(listData[adapterNav.posNav].icon, it)
                     }
                 }
             } else {
@@ -537,9 +583,9 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                 if (newState) {
 
 //                        imvShowColor.setImageResource(R.drawable.imv_color)
-                        llColor.visibility = View.VISIBLE
-                        llColor.alpha = 0f
-                        llColor.animate().alpha(1f).setDuration(200).start()
+                    llColor.visibility = View.VISIBLE
+                    llColor.alpha = 0f
+                    llColor.animate().alpha(1f).setDuration(200).start()
 
 
                 }
@@ -550,40 +596,50 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                 }.start()
             }
             btnReset.onSingleClick {
-                if(!arrBlackCentered[blackCentered].checkDataOnline || isInternetAvailable(
+                if (!arrBlackCentered[blackCentered].checkDataOnline || isInternetAvailable(
                         applicationContext
                     )
-                ){
-                var dialog = DialogExit(
-                    this@CustomviewActivity,
-                    "reset"
-                )
-                dialog.onClick = {
-                    DataHelper.listImage.forEach {
-                        putImage("0", 0, true)
-                    }
-                    arrInt.forEach { i ->
-                        i[0] = 0
-                        i[1] = 0
-                    }
-                    arrInt[0][0] = 1
-                    arrInt[0][1] = 0
+                ) {
+                    lifecycleScope.launch {
+                        val hasInternet = withContext(Dispatchers.IO) {
+                            isNetworkConnected(this@CustomviewActivity)
+                        }
+                        if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                            DialogExit(this@CustomviewActivity, "networked").show()
+                        } else {
+                            var dialog = DialogExit(
+                                this@CustomviewActivity,
+                                "reset"
+                            )
+                            dialog.onClick = {
+                                DataHelper.listImage.forEach {
+                                    putImage("0", 0, true)
+                                }
+                                arrInt.forEach { i ->
+                                    i[0] = 0
+                                    i[1] = 0
+                                }
+                                arrInt[0][0] = 1
+                                arrInt[0][1] = 0
 
-                    adapterPart.setPos(arrInt[adapterNav.posNav][0])
-                    adapterColor.setPos(arrInt[adapterNav.posNav][1])
-                    submitPartList()
-                    updateColorSectionVisibility()
-                    listData.forEachIndexed { index, bodyPartModel ->
-                        putImage(bodyPartModel.icon, 1, true)
+                                adapterPart.setPos(arrInt[adapterNav.posNav][0])
+                                adapterColor.setPos(arrInt[adapterNav.posNav][1])
+                                submitPartList()
+                                updateColorSectionVisibility()
+                                listData.forEachIndexed { index, bodyPartModel ->
+                                    putImage(bodyPartModel.icon, 1, true)
+                                }
+                                putImage(listData[0].icon, 1, false, 0, 0)
+                            }
+                            dialog.show()
+                        }
                     }
-                    putImage(listData[0].icon, 1, false, 0, 0)
-                }
-                dialog.show()
-                }else{
+                } else {
                     DialogExit(
                         this@CustomviewActivity,
                         "loadingnetwork"
-                    ).show()                  }
+                    ).show()
+                }
             }
             imvBack.onSingleClick {
                 var dialog = DialogExit(
@@ -591,7 +647,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                     "exit"
                 )
                 dialog.onClick = {
-                        finish()
+                    finish()
 
                 }
                 dialog.show()
@@ -613,61 +669,72 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                         applicationContext
                     )
                 ) {
-                    // Disable save ngay lập tức
-                    canSave = false
-                    btnSave.alpha = 0.5f
+                    lifecycleScope.launch {
+                        val hasInternet = withContext(Dispatchers.IO) {
+                            isNetworkConnected(this@CustomviewActivity)
+                        }
+                        if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                            DialogExit(this@CustomviewActivity, "networked").show()
+                        } else {
+                            // Disable save ngay lập tức
+                            canSave = false
+                            btnSave.alpha = 0.5f
 
-                    countRandom++
+                            countRandom++
 //                    if (countRandom == 3) {
 //                        btnDice.inhide()
 //                    }
-                    listData.forEachIndexed { index, partBody ->
-                        if (partBody.listPath.size > 1) {
-                            arrInt[index][1] = (0..<partBody.listPath.size).random()
-                        } else {
-                            arrInt[index][1] = 0
-                        }
+                            listData.forEachIndexed { index, partBody ->
+                                if (partBody.listPath.size > 1) {
+                                    arrInt[index][1] = (0..<partBody.listPath.size).random()
+                                } else {
+                                    arrInt[index][1] = 0
+                                }
 
-                        if (partBody.listPath[arrInt[index][1]].listPath[0] == "none") {
-                            if (partBody.listPath[arrInt[index][1]].listPath.size > 3) {
-                                arrInt[index][0] = (2..<partBody.listPath[arrInt[index][1]].listPath.size).random()
-                            } else {
-                                arrInt[index][0] = 2
+                                if (partBody.listPath[arrInt[index][1]].listPath[0] == "none") {
+                                    if (partBody.listPath[arrInt[index][1]].listPath.size > 3) {
+                                        arrInt[index][0] =
+                                            (2..<partBody.listPath[arrInt[index][1]].listPath.size).random()
+                                    } else {
+                                        arrInt[index][0] = 2
+                                    }
+                                } else {
+                                    if (partBody.listPath[arrInt[index][1]].listPath.size > 2) {
+                                        arrInt[index][0] =
+                                            (1..<partBody.listPath[arrInt[index][1]].listPath.size).random()
+                                    } else {
+                                        arrInt[index][0] = 1
+                                    }
+                                }
+
+                                putImage(
+                                    partBody.icon,
+                                    arrInt[index][0],
+                                    false,
+                                    index,
+                                    arrInt[index][1]
+                                )
                             }
-                        } else {
-                            if (partBody.listPath[arrInt[index][1]].listPath.size > 2) {
-                                arrInt[index][0] = (1..<partBody.listPath[arrInt[index][1]].listPath.size).random()
-                            } else {
-                                arrInt[index][0] = 1
+
+                            adapterPart.setPos(arrInt[adapterNav.posNav][0])
+                            adapterColor.setPos(arrInt[adapterNav.posNav][1])
+                            submitPartList()
+                            updateColorSectionVisibility()
+
+                            binding.rcvPart.post {
+                                binding.rcvPart.smoothScrollToPosition(adapterPart.posPath)
                             }
+                            binding.rcvColor.post {
+                                binding.rcvColor.smoothScrollToPosition(adapterColor.posColor)
+                            }
+
+                            // Enable lại save sau 2 giây (thời gian load ảnh)
+                            binding.root.postDelayed({
+                                canSave = true
+                                btnSave.alpha = 1f
+                            }, 2000)
                         }
-
-                        putImage(
-                            partBody.icon,
-                            arrInt[index][0],
-                            false,
-                            index,
-                            arrInt[index][1]
-                        )
                     }
-
-                    adapterPart.setPos(arrInt[adapterNav.posNav][0])
-                    adapterColor.setPos(arrInt[adapterNav.posNav][1])
-                    submitPartList()
-                    updateColorSectionVisibility()
-
-                    binding.rcvPart.post {
-                        binding.rcvPart.smoothScrollToPosition(adapterPart.posPath)
-                    }
-                    binding.rcvColor.post {
-                        binding.rcvColor.smoothScrollToPosition(adapterColor.posColor)
-                    }
-
-                    // Enable lại save sau 2 giây (thời gian load ảnh)
-                    binding.root.postDelayed({
-                        canSave = true
-                        btnSave.alpha = 1f
-                    }, 2000)
                 } else {
                     DialogExit(this@CustomviewActivity, "loadingnetwork").show()
                 }
@@ -744,7 +811,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                         imvShowColor.show()
                     }
 //                    if (countRandom < 3) {
-                        btnDice.show()
+                    btnDice.show()
 //                    }
                     llPart.show()
                     llNav.show()
@@ -765,6 +832,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
         }
 
     }
+
     private fun updateColorSectionVisibility(posNav: Int = adapterNav.posNav) {
         if (posNav < 0 || posNav >= listData.size) return
 

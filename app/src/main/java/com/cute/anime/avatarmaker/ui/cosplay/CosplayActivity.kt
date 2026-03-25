@@ -9,14 +9,9 @@ import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.RectF
 import android.net.ConnectivityManager
-import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
 import android.view.View
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -29,30 +24,28 @@ import com.cute.anime.avatarmaker.data.model.ColorModel
 import com.cute.anime.avatarmaker.data.model.CustomModel
 import com.cute.anime.avatarmaker.data.repository.ApiRepository
 import com.cute.anime.avatarmaker.databinding.ActivityCosplayBinding
-import com.cute.anime.avatarmaker.databinding.ActivitySuccessBinding
 import com.cute.anime.avatarmaker.dialog.DialogExit
-import com.cute.anime.avatarmaker.ui.customview.CustomviewActivity
 import com.cute.anime.avatarmaker.ui.show.ShowActivity
 import com.cute.anime.avatarmaker.utils.CONST
 import com.cute.anime.avatarmaker.utils.DataHelper
 import com.cute.anime.avatarmaker.utils.changeText
 import com.cute.anime.avatarmaker.utils.hide
 import com.cute.anime.avatarmaker.utils.isInternetAvailable
+import com.cute.anime.avatarmaker.utils.isNetworkConnected
 import com.cute.anime.avatarmaker.utils.newIntent
 import com.cute.anime.avatarmaker.utils.onSingleClick
 import com.cute.anime.avatarmaker.utils.show
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class CosplayActivity  : AbsBaseActivity<ActivityCosplayBinding>() {
+class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
 
     override fun getLayoutId(): Int = R.layout.activity_cosplay
 
@@ -89,6 +82,7 @@ class CosplayActivity  : AbsBaseActivity<ActivityCosplayBinding>() {
             }
         }
     }
+
     override fun onRestart() {
         super.onRestart()
     }
@@ -127,7 +121,7 @@ class CosplayActivity  : AbsBaseActivity<ActivityCosplayBinding>() {
                     R.font.hvd_comic_serif_pro
                 ),
                 space,
-                 changeText(
+                changeText(
                     this@CosplayActivity,
                     getString(R.string.tvCosplay3),
                     R.color.app_color,
@@ -147,7 +141,7 @@ class CosplayActivity  : AbsBaseActivity<ActivityCosplayBinding>() {
                     R.font.hvd_comic_serif_pro
                 ),
                 space,
-                 changeText(
+                changeText(
                     this@CosplayActivity,
                     getString(R.string.tvCosplay6),
                     R.color.white,
@@ -159,7 +153,7 @@ class CosplayActivity  : AbsBaseActivity<ActivityCosplayBinding>() {
                     getString(R.string.tvCosplay7),
                     R.color.app_color,
                     R.font.hvd_comic_serif_pro
-                ),space,
+                ), space,
                 changeText(
                     this@CosplayActivity,
                     getString(R.string.tvCosplay8),
@@ -194,30 +188,25 @@ class CosplayActivity  : AbsBaseActivity<ActivityCosplayBinding>() {
                                 .toMap()
                             sortedMap.forEach { key, list ->
                                 var a = arrayListOf<BodyPartModel>()
-                                list.forEachIndexed { index, x10 ->
+                                list.forEach { x10 ->
+                                    // ✅ Skip quantity = 0
+                                    if (x10.quantity <= 0) return@forEach
+
                                     var b = arrayListOf<ColorModel>()
+                                    val halfQuantity = maxOf(1, x10.quantity / 2)
+
                                     x10.colorArray.split(",").forEach { coler ->
                                         var c = arrayListOf<String>()
                                         if (coler == "") {
-                                            for (i in 1..x10.quantity) {
+                                            for (i in 1..halfQuantity) {
                                                 c.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${i}.png")
                                             }
-                                            b.add(
-                                                ColorModel(
-                                                    "#",
-                                                    c
-                                                )
-                                            )
+                                            b.add(ColorModel("#", c))
                                         } else {
-                                            for (i in 1..x10.quantity) {
+                                            for (i in 1..halfQuantity) {
                                                 c.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${coler}/${i}.png")
                                             }
-                                            b.add(
-                                                ColorModel(
-                                                    coler,
-                                                    c
-                                                )
-                                            )
+                                            b.add(ColorModel(coler, c))
                                         }
                                     }
                                     a.add(
@@ -227,24 +216,27 @@ class CosplayActivity  : AbsBaseActivity<ActivityCosplayBinding>() {
                                         )
                                     )
                                 }
-                                var dataModel =
-                                    CustomModel(
-                                        "${CONST.BASE_URL}${CONST.BASE_CONNECT}$key/avatar.png",
-                                        a,
-                                        true
-                                    )
+
+                                var dataModel = CustomModel(
+                                    "${CONST.BASE_URL}${CONST.BASE_CONNECT}$key/avatar.png",
+                                    a,
+                                    true
+                                )
+
                                 dataModel.bodyPart.forEach { mbodyPath ->
                                     if (mbodyPath.icon.substringBeforeLast("/")
                                             .substringAfterLast("/").substringAfter("-") == "1"
                                     ) {
                                         mbodyPath.listPath.forEach {
-                                            if (it.listPath[0] != "dice") {
+                                            // ✅ Check isNotEmpty
+                                            if (it.listPath.isNotEmpty() && it.listPath[0] != "dice") {
                                                 it.listPath.add(0, "dice")
                                             }
                                         }
                                     } else {
                                         mbodyPath.listPath.forEach {
-                                            if (it.listPath[0] != "none") {
+                                            // ✅ Check isNotEmpty
+                                            if (it.listPath.isNotEmpty() && it.listPath[0] != "none") {
                                                 it.listPath.add(0, "none")
                                                 it.listPath.add(1, "dice")
                                             }
@@ -272,15 +264,42 @@ class CosplayActivity  : AbsBaseActivity<ActivityCosplayBinding>() {
     private fun randomizeCharacter() {
         loadingJob?.cancel()
 
+        binding.progressBar.visibility = View.GONE
+        binding.imgCharacter.visibility = View.VISIBLE
+        Glide.with(this@CosplayActivity)
+            .asGif()
+            .load(R.drawable.gif)
+            .into(binding.imgCharacter)
         loadingJob = lifecycleScope.launch(Dispatchers.Default) {
-            val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-            val networkInfo = connectivityManager.activeNetworkInfo
-            val hasInternet = networkInfo != null && networkInfo.isConnected
 
-            val availableModels = if (hasInternet) {
-                DataHelper.arrBlackCentered
+            val availableModels: List<CustomModel>
+
+            if (!isInternetAvailable(this@CosplayActivity)) {
+                // Không có mạng → load local ngay, không cần dialog
+                availableModels = DataHelper.arrBlackCentered.filter { !it.checkDataOnline }
             } else {
-                DataHelper.arrBlackCentered.filter { !it.checkDataOnline }
+                // Có mạng → ping thực tế, timeout 10s
+                val hasRealInternet = withContext(Dispatchers.IO) {
+                    try {
+                        withTimeout(10_000L) {
+                            isNetworkConnected(this@CosplayActivity)
+                        }
+                    } catch (e: TimeoutCancellationException) {
+                        false
+                    }
+                }
+
+                if (!hasRealInternet) {
+                    // Có wifi/data nhưng không ping được → hiện dialog → finish
+                    withContext(Dispatchers.Main) {
+                        val dialog = DialogExit(this@CosplayActivity, "networked")
+                        dialog.onClick = { finish() }
+                        dialog.show()
+                    }
+                    return@launch
+                }
+
+                availableModels = DataHelper.arrBlackCentered
             }
 
             if (availableModels.isEmpty()) {
@@ -341,7 +360,6 @@ class CosplayActivity  : AbsBaseActivity<ActivityCosplayBinding>() {
             }
         }
     }
-
 
 
     private suspend fun loadCharacterBitmap(
@@ -527,36 +545,52 @@ class CosplayActivity  : AbsBaseActivity<ActivityCosplayBinding>() {
                     }
                     val index = DataHelper.arrBlackCentered.indexOf(model)
                     if (index != -1) {
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            try {
-                                // Lưu bitmap vào cache với chất lượng cao
-                                // Xóa tất cả file preview cũ
-                                cacheDir.listFiles { f -> f.name.startsWith("cosplay_preview_") }
-                                    ?.forEach { it.delete() }
+                        lifecycleScope.launch {
+                            val hasInternet = withContext(Dispatchers.IO) {
+                                isNetworkConnected(this@CosplayActivity)
+                            }
+                            if (!hasInternet&& model.checkDataOnline) {
+                                DialogExit(this@CosplayActivity, "networked").show()
+                            } else {
+                                try {
+                                    // Lưu bitmap vào cache với chất lượng cao
+                                    // Xóa tất cả file preview cũ
+                                    cacheDir.listFiles { f -> f.name.startsWith("cosplay_preview_") }
+                                        ?.forEach { it.delete() }
 
-                                val cacheFile = java.io.File(cacheDir, "cosplay_preview_${System.currentTimeMillis()}.png")
-                                characterBitmap?.let { bmp ->
-                                    java.io.FileOutputStream(cacheFile).use { fos ->
-                                        bmp.compress(Bitmap.CompressFormat.PNG, 100, fos)
-                                        fos.flush()
+                                    val cacheFile = java.io.File(
+                                        cacheDir,
+                                        "cosplay_preview_${System.currentTimeMillis()}.png"
+                                    )
+                                    characterBitmap?.let { bmp ->
+                                        java.io.FileOutputStream(cacheFile).use { fos ->
+                                            bmp.compress(Bitmap.CompressFormat.PNG, 100, fos)
+                                            fos.flush()
+                                        }
                                     }
-                                }
-                                withContext(Dispatchers.Main) {
-                                    startActivity(
-                                        newIntent(this@CosplayActivity, ShowActivity::class.java)
-                                            .putExtra("data", index)
-                                            .putExtra("arr", randomCoords)
-                                            .putExtra("imgCoslay", cacheFile.absolutePath)
-                                    )
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                withContext(Dispatchers.Main) {
-                                    startActivity(
-                                        newIntent(this@CosplayActivity, ShowActivity::class.java)
-                                            .putExtra("data", index)
-                                            .putExtra("arr", randomCoords)
-                                    )
+                                    withContext(Dispatchers.Main) {
+                                        startActivity(
+                                            newIntent(
+                                                this@CosplayActivity,
+                                                ShowActivity::class.java
+                                            )
+                                                .putExtra("data", index)
+                                                .putExtra("arr", randomCoords)
+                                                .putExtra("imgCoslay", cacheFile.absolutePath)
+                                        )
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    withContext(Dispatchers.Main) {
+                                        startActivity(
+                                            newIntent(
+                                                this@CosplayActivity,
+                                                ShowActivity::class.java
+                                            )
+                                                .putExtra("data", index)
+                                                .putExtra("arr", randomCoords)
+                                        )
+                                    }
                                 }
                             }
                         }

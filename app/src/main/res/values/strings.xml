@@ -93,6 +93,7 @@
     <string name="loading">Loading</string>
     <string name="edit">Edit</string>
     <string name="no_internet">No internet</string>
+    <string name="internet">Internet</string>
     <string name="ok">Okay</string>
     <string name="background">Background</string>
     <string name="sticker">Sticker</string>
@@ -118,5 +119,6 @@
     <string name="tvCosplay6">Every correct match increases your</string>
     <string name="tvCosplay7">percentage score (%).</string>
     <string name="tvCosplay8">The closer your character looks to the random image, the higher your final score will be. Pay attention to small details to achieve the best cosplay result.</string>
+    <string name="unstable_connection_please_check_your_network_connection">Unstable connection, please check your network connection</string>
 
 </resources>

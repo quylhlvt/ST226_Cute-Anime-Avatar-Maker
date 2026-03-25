@@ -12,6 +12,9 @@ import android.net.ConnectivityManager
 import android.util.Log
 import android.view.View
 import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.base.AbsBaseActivity
 import com.cute.anime.avatarmaker.data.callapi.reponse.DataResponse
 import com.cute.anime.avatarmaker.data.callapi.reponse.LoadingStatus
@@ -19,22 +22,22 @@ import com.cute.anime.avatarmaker.data.model.BodyPartModel
 import com.cute.anime.avatarmaker.data.model.ColorModel
 import com.cute.anime.avatarmaker.data.model.CustomModel
 import com.cute.anime.avatarmaker.data.repository.ApiRepository
+import com.cute.anime.avatarmaker.databinding.ActivityRandomCatBinding
 import com.cute.anime.avatarmaker.dialog.DialogExit
 import com.cute.anime.avatarmaker.ui.customview.CustomviewActivity
 import com.cute.anime.avatarmaker.utils.CONST
 import com.cute.anime.avatarmaker.utils.DataHelper
 import com.cute.anime.avatarmaker.utils.isInternetAvailable
+import com.cute.anime.avatarmaker.utils.isNetworkConnected
 import com.cute.anime.avatarmaker.utils.newIntent
 import com.cute.anime.avatarmaker.utils.onSingleClick
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.cute.anime.avatarmaker.R
-import com.cute.anime.avatarmaker.databinding.ActivityRandomCatBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -71,6 +74,7 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
             }
         }
     }
+
     override fun onRestart() {
         super.onRestart()
     }
@@ -86,7 +90,7 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
         }
 
         binding.apply {
-            tv1.isSelected =true
+            tv1.isSelected = true
             imvNext.isEnabled = false
             btnRandomize.isEnabled = false
             imvNext.alpha = 0.5f
@@ -116,30 +120,25 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
                                 .toMap()
                             sortedMap.forEach { key, list ->
                                 var a = arrayListOf<BodyPartModel>()
-                                list.forEachIndexed { index, x10 ->
+                                list.forEach { x10 ->
+                                    // ✅ Skip quantity = 0
+                                    if (x10.quantity <= 0) return@forEach
+
                                     var b = arrayListOf<ColorModel>()
+                                    val halfQuantity = maxOf(1, x10.quantity / 2)
+
                                     x10.colorArray.split(",").forEach { coler ->
                                         var c = arrayListOf<String>()
                                         if (coler == "") {
-                                            for (i in 1..x10.quantity) {
+                                            for (i in 1..halfQuantity) {
                                                 c.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${i}.png")
                                             }
-                                            b.add(
-                                                ColorModel(
-                                                    "#",
-                                                    c
-                                                )
-                                            )
+                                            b.add(ColorModel("#", c))
                                         } else {
-                                            for (i in 1..x10.quantity) {
+                                            for (i in 1..halfQuantity) {
                                                 c.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${coler}/${i}.png")
                                             }
-                                            b.add(
-                                                ColorModel(
-                                                    coler,
-                                                    c
-                                                )
-                                            )
+                                            b.add(ColorModel(coler, c))
                                         }
                                     }
                                     a.add(
@@ -149,24 +148,27 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
                                         )
                                     )
                                 }
-                                var dataModel =
-                                    CustomModel(
-                                        "${CONST.BASE_URL}${CONST.BASE_CONNECT}$key/avatar.png",
-                                        a,
-                                        true
-                                    )
+
+                                var dataModel = CustomModel(
+                                    "${CONST.BASE_URL}${CONST.BASE_CONNECT}$key/avatar.png",
+                                    a,
+                                    true
+                                )
+
                                 dataModel.bodyPart.forEach { mbodyPath ->
                                     if (mbodyPath.icon.substringBeforeLast("/")
                                             .substringAfterLast("/").substringAfter("-") == "1"
                                     ) {
                                         mbodyPath.listPath.forEach {
-                                            if (it.listPath[0] != "dice") {
+                                            // ✅ Check isNotEmpty
+                                            if (it.listPath.isNotEmpty() && it.listPath[0] != "dice") {
                                                 it.listPath.add(0, "dice")
                                             }
                                         }
                                     } else {
                                         mbodyPath.listPath.forEach {
-                                            if (it.listPath[0] != "none") {
+                                            // ✅ Check isNotEmpty
+                                            if (it.listPath.isNotEmpty() && it.listPath[0] != "none") {
                                                 it.listPath.add(0, "none")
                                                 it.listPath.add(1, "dice")
                                             }
@@ -193,16 +195,43 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
 
     private fun randomizeCharacter() {
         loadingJob?.cancel()
+        binding.progressBar.visibility = View.GONE
+        binding.imgCharacter.visibility = View.VISIBLE
+        Glide.with(this@RandomCatActivity)
+            .asGif()
+            .load(R.drawable.gif)
+            .into(binding.imgCharacter)
 
         loadingJob = lifecycleScope.launch(Dispatchers.Default) {
-            val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-            val networkInfo = connectivityManager.activeNetworkInfo
-            val hasInternet = networkInfo != null && networkInfo.isConnected
 
-            val availableModels = if (hasInternet) {
-                DataHelper.arrBlackCentered
+            val availableModels: List<CustomModel>
+
+            if (!isInternetAvailable(this@RandomCatActivity)) {
+                // Không có mạng → load local ngay, không cần dialog
+                availableModels = DataHelper.arrBlackCentered.filter { !it.checkDataOnline }
             } else {
-                DataHelper.arrBlackCentered.filter { !it.checkDataOnline }
+                // Có mạng → ping thực tế, timeout 10s
+                val hasRealInternet = withContext(Dispatchers.IO) {
+                    try {
+                        withTimeout(10_000L) {
+                            isNetworkConnected(this@RandomCatActivity)
+                        }
+                    } catch (e: TimeoutCancellationException) {
+                        false
+                    }
+                }
+
+                if (!hasRealInternet) {
+                    // Có wifi/data nhưng không ping được → hiện dialog → finish
+                    withContext(Dispatchers.Main) {
+                        val dialog = DialogExit(this@RandomCatActivity, "networked")
+                        dialog.onClick = { finish() }
+                        dialog.show()
+                    }
+                    return@launch
+                }
+
+                availableModels = DataHelper.arrBlackCentered
             }
 
             if (availableModels.isEmpty()) {
@@ -224,11 +253,10 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
                         .substringAfterLast("/")
                         .split("-")
                         .map { it.toInt() }
-                    list[x - 1] = it.icon
+                    if (x - 1 < list.size) list[x - 1] = it.icon  // ✅ bounds check
                 }
                 listImageSortView = list
 
-                // FIX: Logic random coords đã được sửa
                 val coords = arrayListOf<ArrayList<Int>>()
                 list.forEach { data ->
                     val bodyPart = model.bodyPart.find { it.icon == data }
@@ -236,7 +264,6 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
                         val path = bodyPart.listPath[0].listPath
                         val color = bodyPart.listPath
 
-                        // FIX: Bỏ qua "none" và "dice" khi random
                         val validIndices = path.indices.filter { idx ->
                             val value = path[idx]
                             value != "none" && value != "dice"
@@ -245,8 +272,9 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
                         val randomValue = if (validIndices.isNotEmpty()) {
                             validIndices.random()
                         } else {
-                            // Nếu không có giá trị hợp lệ, chọn index đầu tiên không phải none
-                            if (path[0] == "none") 2 else 1
+                            // ✅ guard isNotEmpty
+                            if (path.isEmpty()) 1
+                            else if (path[0] == "none") 2 else 1
                         }
 
                         val randomColor = (0 until color.size).random()
@@ -258,12 +286,10 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
                 }
                 randomCoords = coords
 
-                Log.d("RandomCat", "Generated coords: $coords")
                 loadCharacterBitmap(model, list, coords)
             }
         }
     }
-
 
 
     private suspend fun loadCharacterBitmap(
@@ -438,14 +464,27 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
                     if (!isInternetAvailable(this@RandomCatActivity) && model.checkDataOnline) {
                         DialogExit(this@RandomCatActivity, "network").show()
                         return@onSingleClick
-                    }
-                    val index = DataHelper.arrBlackCentered.indexOf(model)
-                    if (index != -1) {
-                        startActivity(
-                            newIntent(this@RandomCatActivity, CustomviewActivity::class.java)
-                                .putExtra("data", index)
-                                .putExtra("arr", randomCoords)
-                        )
+                    } else {
+                        lifecycleScope.launch {
+                            val hasInternet = withContext(Dispatchers.IO) {
+                                isNetworkConnected(this@RandomCatActivity)
+                            }
+                            if (!hasInternet&& model.checkDataOnline) {
+                                DialogExit(this@RandomCatActivity, "networked").show()
+                            } else {
+                                val index = DataHelper.arrBlackCentered.indexOf(model)
+                                if (index != -1) {
+                                    startActivity(
+                                        newIntent(
+                                            this@RandomCatActivity,
+                                            CustomviewActivity::class.java
+                                        )
+                                            .putExtra("data", index)
+                                            .putExtra("arr", randomCoords)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

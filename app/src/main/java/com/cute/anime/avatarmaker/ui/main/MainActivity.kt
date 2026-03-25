@@ -126,25 +126,16 @@ class MainActivity : AbsBaseActivity<ActivityMainBinding>() {
                                     x10.colorArray.split(",").forEach { coler ->
                                         var c = arrayListOf<String>()
                                         if (coler == "") {
-                                            for (i in 1..x10.quantity) {
+                                            val halfQuantity = maxOf(1, x10.quantity / 2)  // ✅ không có màu → chia 2
+                                            for (i in 1..halfQuantity) {
                                                 c.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${i}.png")
                                             }
-                                            b.add(
-                                                ColorModel(
-                                                    "#",
-                                                    c
-                                                )
-                                            )
+                                            b.add(ColorModel("#", c))
                                         } else {
-                                            for (i in 1..x10.quantity) {
+                                            for (i in 1..x10.quantity) {  // ✅ có màu → full quantity
                                                 c.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${coler}/${i}.png")
                                             }
-                                            b.add(
-                                                ColorModel(
-                                                    coler,
-                                                    c
-                                                )
-                                            )
+                                            b.add(ColorModel(coler, c))
                                         }
                                     }
                                     a.add(

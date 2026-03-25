@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.ConnectivityManager
 import android.util.Log
+import androidx.lifecycle.lifecycleScope
 import com.cute.anime.avatarmaker.base.AbsBaseActivity
 import com.cute.anime.avatarmaker.data.callapi.reponse.DataResponse
 import com.cute.anime.avatarmaker.data.callapi.reponse.LoadingStatus
@@ -22,7 +23,11 @@ import com.cute.anime.avatarmaker.utils.newIntent
 import com.cute.anime.avatarmaker.utils.onSingleClick
 import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.databinding.ActivityCategoryBinding
+import com.cute.anime.avatarmaker.utils.isNetworkConnected
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -125,19 +130,23 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
                             sortedMap.forEach { key, list ->
                                 val bodyPartList = arrayListOf<BodyPartModel>()
 
-                                list.forEachIndexed { index, x10 ->
+                                list.forEach { x10 ->
+                                    // ✅ Skip item quantity = 0
+                                    if (x10.quantity <= 0) return@forEach
+
                                     val colorList = arrayListOf<ColorModel>()
+                                    val halfQuantity = maxOf(1, x10.quantity / 2)
 
                                     x10.colorArray.split(",").forEach { color ->
                                         val pathList = arrayListOf<String>()
 
                                         if (color == "") {
-                                            for (i in 1..x10.quantity) {
+                                            for (i in 1..halfQuantity) {
                                                 pathList.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${i}.png")
                                             }
                                             colorList.add(ColorModel("#", pathList))
                                         } else {
-                                            for (i in 1..x10.quantity) {
+                                            for (i in 1..halfQuantity) {
                                                 pathList.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${color}/${i}.png")
                                             }
                                             colorList.add(ColorModel(color, pathList))
@@ -158,19 +167,20 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
                                     true
                                 )
 
-                                // Xử lý dice và none cho từng body part
                                 dataModel.bodyPart.forEach { mbodyPath ->
                                     if (mbodyPath.icon.substringBeforeLast("/")
                                             .substringAfterLast("/").substringAfter("-") == "1"
                                     ) {
                                         mbodyPath.listPath.forEach { colorModel ->
-                                            if (colorModel.listPath[0] != "dice") {
+                                            // ✅ Check isNotEmpty
+                                            if (colorModel.listPath.isNotEmpty() && colorModel.listPath[0] != "dice") {
                                                 colorModel.listPath.add(0, "dice")
                                             }
                                         }
                                     } else {
                                         mbodyPath.listPath.forEach { colorModel ->
-                                            if (colorModel.listPath[0] != "none") {
+                                            // ✅ Check isNotEmpty
+                                            if (colorModel.listPath.isNotEmpty() && colorModel.listPath[0] != "none") {
                                                 colorModel.listPath.add(0, "none")
                                                 colorModel.listPath.add(1, "dice")
                                             }
@@ -234,15 +244,26 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
             adapter.onCLick = {
                 if (DataHelper.arrBlackCentered[it].checkDataOnline) {
                     if (isInternetAvailable(this@CategoryActivity)) {
-                        var a = DataHelper.arrBlackCentered[it].avt.split("/")
-                        var b = a[a.size - 2]
-                        Log.d("testKey","${b}")
-                            startActivity(
-                                newIntent(
+                        lifecycleScope.launch {
+                            val hasInternet = withContext(Dispatchers.IO) {
+                                isNetworkConnected(this@CategoryActivity)
+                            }
+                            if (hasInternet) {
+                                var a = DataHelper.arrBlackCentered[it].avt.split("/")
+                                var b = a[a.size - 2]
+                                Log.d("testKey", "${b}")
+                                startActivity(
+                                    newIntent(
+                                        this@CategoryActivity,
+                                        CustomviewActivity::class.java
+                                    ).putExtra("data", it)
+                                )
+                            }else {
+                                DialogExit(
                                     this@CategoryActivity,
-                                    CustomviewActivity::class.java
-                                ).putExtra("data", it)
-                            )
+                                    "networked"
+                                ).show()
+                            }}
 
                     } else {
                         DialogExit(

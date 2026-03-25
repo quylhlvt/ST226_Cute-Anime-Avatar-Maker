@@ -40,6 +40,7 @@ import com.cute.anime.avatarmaker.ui.customview.CustomviewActivity
 import com.cute.anime.avatarmaker.utils.SharedPreferenceUtils
 import com.cute.anime.avatarmaker.utils.hide
 import com.cute.anime.avatarmaker.utils.isInternetAvailable
+import com.cute.anime.avatarmaker.utils.isNetworkConnected
 import com.cute.anime.avatarmaker.utils.show
 import com.cute.anime.avatarmaker.utils.showDialogNotifiListener
 import com.cute.anime.avatarmaker.utils.toList
@@ -47,6 +48,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 
@@ -131,25 +133,16 @@ class ViewActivity : AbsBaseActivity<ActivityViewBinding>() {
                                     x10.colorArray.split(",").forEach { coler ->
                                         var c = arrayListOf<String>()
                                         if (coler == "") {
-                                            for (i in 1..x10.quantity) {
+                                            val halfQuantity = maxOf(1, x10.quantity / 2)  // ✅ không có màu → chia 2
+                                            for (i in 1..halfQuantity) {
                                                 c.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${i}.png")
                                             }
-                                            b.add(
-                                                ColorModel(
-                                                    "#",
-                                                    c
-                                                )
-                                            )
+                                            b.add(ColorModel("#", c))
                                         } else {
-                                            for (i in 1..x10.quantity) {
+                                            for (i in 1..x10.quantity) {  // ✅ có màu → full quantity
                                                 c.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${coler}/${i}.png")
                                             }
-                                            b.add(
-                                                ColorModel(
-                                                    coler,
-                                                    c
-                                                )
-                                            )
+                                            b.add(ColorModel(coler, c))
                                         }
                                     }
                                     a.add(
@@ -165,18 +158,19 @@ class ViewActivity : AbsBaseActivity<ActivityViewBinding>() {
                                         a,
                                         true
                                     )
+                                // ✅ SAU
                                 dataModel.bodyPart.forEach { mbodyPath ->
                                     if (mbodyPath.icon.substringBeforeLast("/")
                                             .substringAfterLast("/").substringAfter("-") == "1"
                                     ) {
                                         mbodyPath.listPath.forEach {
-                                            if (it.listPath[0] != "dice") {
+                                            if (it.listPath.isNotEmpty() && it.listPath[0] != "dice") {
                                                 it.listPath.add(0, "dice")
                                             }
                                         }
                                     } else {
                                         mbodyPath.listPath.forEach {
-                                            if (it.listPath[0] != "none") {
+                                            if (it.listPath.isNotEmpty() && it.listPath[0] != "none") {
                                                 it.listPath.add(0, "none")
                                                 it.listPath.add(1, "dice")
                                             }
@@ -227,34 +221,46 @@ class ViewActivity : AbsBaseActivity<ActivityViewBinding>() {
                             "loadingnetwork"
                         ).show()
                         return@getAvatar
-                    }
-                    if (avatar != null) {
-                        var index =
-                            DataHelper.arrBlackCentered.indexOfFirst { it.avt == avatar.pathAvatar }
-                        if (index > -1) {
-                            var a = avatar.pathAvatar.split("/")
-                            var b = a[a.size - 2]
-                            Log.d("indexb", b)
-                            startActivity(
-                                Intent(
-                                    applicationContext,
-                                    CustomviewActivity::class.java
-                                ).putExtra("data", index)
-                                    .putExtra("arr", toList(avatar.arr))
-                                    .putExtra("isFlipped", avatar.isFlipped)
-                                    .putExtra("fileName", File(avatar.path).name)
-                            )
-                        } else {
-                            lifecycleScope.launch {
-                                val dialog = DialogExit(
-                                    this@ViewActivity,
-                                    "awaitdata"
-                                )
-                                dialog.show()
-
+                    }else{
+                        lifecycleScope.launch {
+                            val hasInternet = withContext(Dispatchers.IO) {
+                                isNetworkConnected(this@ViewActivity)
                             }
+                            if (!hasInternet) {
+
+                                        DialogExit(this@ViewActivity, "networked").show()
+
+                            }else{
+                                if (avatar != null) {
+                                    var index =
+                                        DataHelper.arrBlackCentered.indexOfFirst { it.avt == avatar.pathAvatar }
+                                    if (index > -1) {
+                                        var a = avatar.pathAvatar.split("/")
+                                        var b = a[a.size - 2]
+                                        Log.d("indexb", b)
+                                        startActivity(
+                                            Intent(
+                                                applicationContext,
+                                                CustomviewActivity::class.java
+                                            ).putExtra("data", index)
+                                                .putExtra("arr", toList(avatar.arr))
+                                                .putExtra("isFlipped", avatar.isFlipped)
+                                                .putExtra("fileName", File(avatar.path).name)
+                                        )
+                                    } else {
+                                        lifecycleScope.launch {
+                                            val dialog = DialogExit(
+                                                this@ViewActivity,
+                                                "awaitdata"
+                                            )
+                                            dialog.show()
+
+                                        }
+                                    }
+                                }}
+
                         }
-                    }
+                        }
                 }
             }
             imvDelete.onSingleClick {

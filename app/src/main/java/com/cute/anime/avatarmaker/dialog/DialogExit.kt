@@ -51,6 +51,22 @@ class DialogExit(context: Activity, var type: String) :
                         context.getString(R.string.please_check_your_network_connection)
                 }
             }
+            "networked" -> {
+                binding.apply {
+//                    frameTitle.setBackgroundResource(R.drawable.bg_title_dialog_nointernet)
+//                    constraintLayout.setBackgroundResource(R.drawable.bg_dialog_nointernet)
+//                    imgInBgDialog.setImageResource(R.drawable.img_in_nointernet)
+                    txtTitle.text = context.getString(R.string.internet)
+                    txtTitle.isSelected = true
+                    btnYes.hide()
+                    btnNo.hide()
+                    btnOk.show()
+                    txtContent.hide()
+                    txtContent1.show()
+                    txtContent1.text =
+                        context.getString(R.string.unstable_connection_please_check_your_network_connection)
+                }
+            }
 
             "loadingnetwork" -> {
                 binding.apply {
@@ -142,6 +158,7 @@ class DialogExit(context: Activity, var type: String) :
                 dismiss()
             }
             btnOk.onSingleClick {
+                onClick?.invoke()
                 dismiss()
             }
         }

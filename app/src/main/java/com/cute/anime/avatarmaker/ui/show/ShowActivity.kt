@@ -25,6 +25,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.doOnLayout
 import androidx.core.view.isInvisible
+import androidx.lifecycle.lifecycleScope
 import com.cute.anime.avatarmaker.base.AbsBaseActivity
 import com.cute.anime.avatarmaker.data.model.AvatarModel
 import com.cute.anime.avatarmaker.data.model.BodyPartModel
@@ -51,8 +52,12 @@ import com.cute.anime.avatarmaker.ui.successcoslay.SuccessCosplayActivity
 import com.cute.anime.avatarmaker.utils.DataHelper.arrBlackCentered
 import com.cute.anime.avatarmaker.utils.hide
 import com.cute.anime.avatarmaker.utils.inhide
+import com.cute.anime.avatarmaker.utils.isNetworkConnected
 import com.cute.anime.avatarmaker.utils.show
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.text.toFloat
 
 @AndroidEntryPoint
@@ -382,38 +387,36 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
             arrayListOf(it[0], it[1])
         } as? ArrayList<ArrayList<Int>>
         var checkFirst = true
+
         repeat(DataHelper.arrBlackCentered[blackCentered].bodyPart.size) {
             DataHelper.listImageSortView.add("")
             DataHelper.listImage.add("")
         }
+
+        // ✅ Cache size
+        val listSize = DataHelper.listImageSortView.size
+
         DataHelper.arrBlackCentered[blackCentered].bodyPart.forEach {
             val (x, y) = it.icon.substringBeforeLast("/").substringAfterLast("/").split("-")
                 .map { it.toInt() }
-            DataHelper.listImageSortView[x - 1] = it.icon
-            DataHelper.listImage[y - 1] = it.icon
+
+            // ✅ Check bounds trước khi set
+            if (x - 1 < listSize) DataHelper.listImageSortView[x - 1] = it.icon
+            if (y - 1 < listSize) DataHelper.listImage[y - 1] = it.icon
             iconToIndexMap[it.icon] = x - 1
         }
-        //thu tu navi
+
         DataHelper.listImage.forEachIndexed { index, icon ->
-            var x = arrBlackCentered[blackCentered].bodyPart.indexOfFirst { it.icon == icon }
-            var y = DataHelper.listImageSortView.indexOf(icon)
+            val x = arrBlackCentered[blackCentered].bodyPart.indexOfFirst { it.icon == icon }
+            val y = DataHelper.listImageSortView.indexOf(icon)
             if (x != -1) {
                 arrShowColor.add(true)
                 listData.add(arrBlackCentered[blackCentered].bodyPart[x])
                 if (checkFirst) {
                     checkFirst = false
-//                    arrIntHottrend thu tu view
-//                    if (arrIntHottrend != null) {
-//                        arrInt.add(arrayListOf(arrIntHottrend!![y][0], arrIntHottrend!![y][1]))
-//                    } else {
-                        arrInt.add(arrayListOf(1, 0))
-//                    }
+                    arrInt.add(arrayListOf(1, 0))
                 } else {
-//                    if (arrIntHottrend != null) {
-//                        arrInt.add(arrayListOf(arrIntHottrend!![y][0], arrIntHottrend!![y][1]))
-//                    } else {
-                        arrInt.add(arrayListOf(0, 0))
-//                    }
+                    arrInt.add(arrayListOf(0, 0))
                 }
             }
         }
@@ -494,6 +497,12 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                     applicationContext
                 )
             ) {
+                lifecycleScope.launch {  val hasInternet = withContext(Dispatchers.IO) {
+                    isNetworkConnected(this@ShowActivity)
+                }
+                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline && !hasInternet) {
+                        DialogExit(this@ShowActivity, "networked").show()
+                    } else {
                 val recyclerState = binding.rcvPart.layoutManager?.onSaveInstanceState()
                 adapterColor.setPos(it)
                 adapterColor.submitList(listData[adapterNav.posNav].listPath)
@@ -501,7 +510,7 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                 submitPartList(commitCallback = {
                     binding.rcvPart.layoutManager?.onRestoreInstanceState(recyclerState)
                 })
-                putImage(listData[adapterNav.posNav].icon, adapterPart.posPath)
+                putImage(listData[adapterNav.posNav].icon, adapterPart.posPath)}}
             } else {
                 DialogExit(
                     this@ShowActivity,
@@ -515,55 +524,62 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                     applicationContext
                 )
             ) {
-                val newPos = it
-
-                // Validate và chuẩn bị indices
-                val currentBodyPart = listData[newPos]
-                val maxColorIndex = currentBodyPart.listPath.size - 1
-                val safeColorIndex = arrInt[newPos][1].coerceIn(0, maxColorIndex)
-
-                // Cập nhật arrInt nếu cần
-                if (arrInt[newPos][1] != safeColorIndex) {
-                    arrInt[newPos][1] = safeColorIndex
+                lifecycleScope.launch {  val hasInternet = withContext(Dispatchers.IO) {
+                    isNetworkConnected(this@ShowActivity)
                 }
+                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline && !hasInternet) {
+                        DialogExit(this@ShowActivity, "networked").show()
+                    } else {
+                        val newPos = it
 
-                val maxPartIndex = currentBodyPart.listPath[safeColorIndex].listPath.size - 1
-                val safePartIndex = arrInt[newPos][0].coerceIn(0, maxPartIndex)
+                        // Validate và chuẩn bị indices
+                        val currentBodyPart = listData[newPos]
+                        val maxColorIndex = currentBodyPart.listPath.size - 1
+                        val safeColorIndex = arrInt[newPos][1].coerceIn(0, maxColorIndex)
 
-                if (arrInt[newPos][0] != safePartIndex) {
-                    arrInt[newPos][0] = safePartIndex
-                }
+                        // Cập nhật arrInt nếu cần
+                        if (arrInt[newPos][1] != safeColorIndex) {
+                            arrInt[newPos][1] = safeColorIndex
+                        }
 
-                // Bắt đầu cập nhật UI
-                adapterNav.setPos(newPos)
-                adapterNav.submitList(listData)
-                // Set color adapter position trước
-                adapterColor.setPos(safeColorIndex)
-                // Cập nhật visibility
-                updateColorSectionVisibility(newPos)
-                // Submit color list nếu cần
-                val hasMultipleColors = currentBodyPart.listPath.size > 1
-                if (hasMultipleColors && arrShowColor[newPos]) {
-                    adapterColor.submitList(currentBodyPart.listPath)
-                    binding.root.postDelayed({
-                        binding.rcvColor.smoothScrollToPosition(safeColorIndex)
-                    }, 100)
-                } else if (hasMultipleColors) {
-                    adapterColor.submitList(currentBodyPart.listPath)
-                }
+                        val maxPartIndex =
+                            currentBodyPart.listPath[safeColorIndex].listPath.size - 1
+                        val safePartIndex = arrInt[newPos][0].coerceIn(0, maxPartIndex)
 
-                // Cập nhật part adapter
-                if (adapterColor.posColor == safeColorIndex) {
-                    adapterPart.setPos(safePartIndex)
-                } else {
-                    adapterPart.setPos(-1)
-                }
-                submitPartList(navPos = it, colorPos = arrInt[it][1])
+                        if (arrInt[newPos][0] != safePartIndex) {
+                            arrInt[newPos][0] = safePartIndex
+                        }
 
-                binding.root.postDelayed({
-                    binding.rcvPart.smoothScrollToPosition(safePartIndex)
-                }, 100)
+                        // Bắt đầu cập nhật UI
+                        adapterNav.setPos(newPos)
+                        adapterNav.submitList(listData)
+                        // Set color adapter position trước
+                        adapterColor.setPos(safeColorIndex)
+                        // Cập nhật visibility
+                        updateColorSectionVisibility(newPos)
+                        // Submit color list nếu cần
+                        val hasMultipleColors = currentBodyPart.listPath.size > 1
+                        if (hasMultipleColors && arrShowColor[newPos]) {
+                            adapterColor.submitList(currentBodyPart.listPath)
+                            binding.root.postDelayed({
+                                binding.rcvColor.smoothScrollToPosition(safeColorIndex)
+                            }, 100)
+                        } else if (hasMultipleColors) {
+                            adapterColor.submitList(currentBodyPart.listPath)
+                        }
 
+                        // Cập nhật part adapter
+                        if (adapterColor.posColor == safeColorIndex) {
+                            adapterPart.setPos(safePartIndex)
+                        } else {
+                            adapterPart.setPos(-1)
+                        }
+                        submitPartList(navPos = it, colorPos = arrInt[it][1])
+
+                        binding.root.postDelayed({
+                            binding.rcvPart.smoothScrollToPosition(safePartIndex)
+                        }, 100)
+                    }}
             } else {
                 DialogExit(this@ShowActivity, "loadingnetwork").show()
             }
@@ -574,6 +590,12 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                     applicationContext
                 )
             ) {
+                lifecycleScope.launch {  val hasInternet = withContext(Dispatchers.IO) {
+                    isNetworkConnected(this@ShowActivity)
+                }
+                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline && !hasInternet) {
+                        DialogExit(this@ShowActivity, "networked").show()
+                    } else {
                 when (type) {
                     "none" -> {
                         adapterPart.setPos(it)
@@ -635,7 +657,7 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                         putImage(listData[adapterNav.posNav].icon, it)
                         updateMatchUI()
                     }
-                }
+                }}}
             } else {
                 DialogExit(
                     this@ShowActivity,
@@ -671,6 +693,12 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                         applicationContext
                     )
                 ){
+                    lifecycleScope.launch {  val hasInternet = withContext(Dispatchers.IO) {
+                        isNetworkConnected(this@ShowActivity)
+                    }
+                        if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                            DialogExit(this@ShowActivity, "networked").show()
+                        } else {
                     var dialog = DialogExit(
                         this@ShowActivity,
                         "reset"
@@ -695,7 +723,7 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                         }
                         putImage(listData[0].icon, 1, false, 0, 0)
                     }
-                    dialog.show()
+                    dialog.show()}}
                 }else{
                     DialogExit(
                         this@ShowActivity,
@@ -730,6 +758,12 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                         applicationContext
                     )
                 ) {
+                    lifecycleScope.launch {  val hasInternet = withContext(Dispatchers.IO) {
+                        isNetworkConnected(this@ShowActivity)
+                    }
+                        if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                            DialogExit(this@ShowActivity, "networked").show()
+                        } else {
                     // Disable save ngay lập tức
                     canSave = false
                     btnSave.alpha = 0.5f
@@ -784,7 +818,7 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                     binding.root.postDelayed({
                         canSave = true
                         btnSave.alpha = 1f
-                    }, 2000)
+                    }, 2000)}}
                 } else {
                     DialogExit(this@ShowActivity, "loadingnetwork").show()
                 }
