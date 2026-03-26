@@ -71,7 +71,7 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
     }
 
     override fun initView() {
-        binding.imvBack.isSelected=true
+        binding.imvBack.isSelected = true
         // Đăng ký broadcast receiver
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         registerReceiver(networkReceiver, filter)
@@ -85,14 +85,26 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
                 "awaitdataHome"
             ).show()
         }
+        lifecycleScope.launch {
+            val hasInternet = withContext(Dispatchers.IO) {
+                isNetworkConnected(this@CategoryActivity)
+            }
+            if (!hasInternet) {
+                DialogExit(
+                    this@CategoryActivity,
+                    "networked"
+                ).show()
+            }
 
         if (DataHelper.arrBg.size == 0) {
             finish()
         } else {
+
             binding.rcv.itemAnimator = null
             binding.rcv.adapter = adapter
             adapter.submitList(DataHelper.arrBlackCentered)
         }
+    }
     }
 
     private fun observeDataOnline() {
@@ -231,7 +243,6 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
     }
 
 
-
     override fun onBackPressed() {
         super.onBackPressed()
     }
@@ -239,7 +250,7 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
     override fun initAction() {
         binding.apply {
             imvBack.onSingleClick {
-                    finish()
+                finish()
             }
             adapter.onCLick = {
                 if (DataHelper.arrBlackCentered[it].checkDataOnline) {
@@ -258,12 +269,13 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
                                         CustomviewActivity::class.java
                                     ).putExtra("data", it)
                                 )
-                            }else {
+                            } else {
                                 DialogExit(
                                     this@CategoryActivity,
                                     "networked"
                                 ).show()
-                            }}
+                            }
+                        }
 
                     } else {
                         DialogExit(
@@ -274,7 +286,7 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
                 } else {
                     var a = DataHelper.arrBlackCentered[it].avt.split("/")
                     var b = a[a.size - 2]
-                    Log.d("testKey","${b}")
+                    Log.d("testKey", "${b}")
                     startActivity(
                         newIntent(
                             this@CategoryActivity,

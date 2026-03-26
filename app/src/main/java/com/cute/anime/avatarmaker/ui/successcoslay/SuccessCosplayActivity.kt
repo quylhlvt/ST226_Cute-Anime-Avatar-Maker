@@ -52,7 +52,15 @@ class SuccessCosplayActivity : AbsBaseActivity<ActivitySuccessCosplayBinding>() 
         binding.tvMatchPercent.text = "$matchPercent/100"
 
         // Luôn hiện 5 sao, fill theo phần trăm
-        val starCount = (matchPercent / 20).coerceIn(0, 5)
+        val starCount = when (matchPercent) {
+            0 -> 0
+            in 1..20 -> 1
+            in 21..40 -> 2
+            in 41..70 -> 3
+            in 71..90 -> 4
+            in 91..100 -> 5
+            else -> 0
+        }
         binding.ll1.rating = starCount.toFloat()
 
         binding.progressTrack.post {

@@ -59,7 +59,7 @@ class SettingActivity : AbsBaseActivity<ActivitySettingBinding>() {
             llPrivacy.onSingleClick {
                 policy()
             }
-            binding.imvBack.onSingleClick {
+            imvBack.onSingleClick {
                 finish()
             }
         }

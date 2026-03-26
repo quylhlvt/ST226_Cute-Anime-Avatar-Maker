@@ -31,6 +31,7 @@ import android.media.MediaMetadataRetriever
 import android.media.MediaScannerConnection
 import android.media.RingtoneManager
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -1250,22 +1251,10 @@ fun isInternetAvailable(context: Context): Boolean {
     return activeNetwork?.isConnectedOrConnecting == true
 }
 fun isNetworkConnected(context: Context): Boolean {
-    val connectivityManager =
-        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-    // Bước 1: Check có kết nối mạng không
-    val activeNetwork = connectivityManager.activeNetworkInfo
-    if (activeNetwork?.isConnectedOrConnecting != true) return false
-
-    // Bước 2: Ping thực tế để check có internet không
-    return try {
-        val socket = java.net.Socket()
-        socket.connect(java.net.InetSocketAddress("8.8.8.8", 53), 1500)
-        socket.close()
-        true
-    } catch (e: Exception) {
-        false
-    }
+    val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val caps = cm.getNetworkCapabilities(cm.activeNetwork ?: return false) ?: return false
+    return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 }
 
 

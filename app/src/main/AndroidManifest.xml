@@ -42,10 +42,12 @@
         tools:replace="android:fullBackupContent">
         <activity
             android:name=".ui.successcoslay.SuccessCosplayActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".ui.show.ShowActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".ui.cosplay.CosplayActivity"
             android:exported="false"
