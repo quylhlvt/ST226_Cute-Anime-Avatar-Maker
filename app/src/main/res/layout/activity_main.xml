@@ -383,11 +383,11 @@
 
                 </ScrollView>
 
-        <!--        <FrameLayout-->
-        <!--            android:id="@+id/flNativeCollab"-->
-        <!--            android:layout_width="match_parent"-->
-        <!--            android:layout_height="wrap_content"-->
-        <!--            android:elevation="100dp"-->
-        <!--            app:layout_constraintBottom_toBottomOf="parent" />-->
+                <FrameLayout
+                    android:id="@+id/flNativeCollab"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:elevation="100dp"
+                    app:layout_constraintBottom_toBottomOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

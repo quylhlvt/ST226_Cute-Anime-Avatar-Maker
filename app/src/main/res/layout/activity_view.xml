@@ -71,7 +71,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="10dp"
             android:layout_marginTop="50dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="82dp"
             android:visibility="visible"
             app:layout_constraintBottom_toBottomOf="parent"
             tools:layout_editor_absoluteX="8dp">
@@ -202,13 +202,13 @@
 <!--            app:layout_constraintStart_toStartOf="@+id/llBottom"-->
 <!--            app:layout_constraintTop_toBottomOf="@+id/llBottom" />-->
         <!--    flNativeCollab-->
-<!--        <FrameLayout-->
-<!--            android:id="@+id/flNativeCollab"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            app:layout_constraintBottom_toBottomOf="parent">-->
+        <FrameLayout
+            android:id="@+id/flNativeCollab"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent">
 
-<!--            <include layout="@layout/ads_shimmer_collap_native" />-->
-<!--        </FrameLayout>-->
+            <include layout="@layout/ads_shimmer_collap_native" />
+        </FrameLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

@@ -116,6 +116,7 @@
     <string name="tvCosplay5">हेयरस्टाइल, पोशाक, रंग और सहायक उपकरण चुनकर।</string>
     <string name="tvCosplay6">प्रत्येक सही मिलान आपका</string>
     <string name="tvCosplay7">प्रतिशत स्कोर (%) बढ़ाता है।</string>
+    <string name="try_again">पुनः प्रयास करें</string>
     <string name="tvCosplay8">आपका किरदार यादृच्छिक छवि जितना अधिक मिलता-जुलता होगा, आपका अंतिम स्कोर उतना ही अधिक होगा। सर्वश्रेष्ठ कॉस्प्ले परिणाम प्राप्त करने के लिए छोटे विवरणों पर ध्यान दें।</string>
     <string name="unstable_connection_please_check_your_network_connection">अस्थिर कनेक्शन, कृपया अपना नेटवर्क कनेक्शन जांचें</string>
 </resources>

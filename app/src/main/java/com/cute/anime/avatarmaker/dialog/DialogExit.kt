@@ -8,8 +8,9 @@ import com.cute.anime.avatarmaker.utils.onSingleClick
 import com.cute.anime.avatarmaker.utils.show
 import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.databinding.DialogExitBinding
+import com.lvt.ads.util.Admob
 
-class DialogExit(context: Activity, var type: String) :
+class DialogExit(context: Activity, var type: String,var bg:Int?=1) :
     BaseDialog<DialogExitBinding>(context, false) {
     var onClick: (() -> Unit)? = null
     override fun getContentView(): Int = R.layout.dialog_exit
@@ -26,13 +27,14 @@ class DialogExit(context: Activity, var type: String) :
                 binding.txtTitle.isSelected = true
                 binding.txtContent.text =
                     context.getString(R.string.haven_saved_it_yet_are_you_sure_to_exit)
-//                binding.nativeAds.show()
-//                Admob.getInstance().loadNativeAd(
-//                    context,
-//                    context.getString(R.string.native_dialog),
-//                    binding.nativeAds,
-//                    com.lvt.ads.R.layout.ads_native_avg2
-//                )
+                if (bg==0){
+                binding.nativeAds.show()
+                Admob.getInstance().loadNativeAd(
+                    context,
+                    context.getString(R.string.native_dialog),
+                    binding.nativeAds,
+                    com.lvt.ads.R.layout.ads_native_avg2
+                )}
             }
 
             "network" -> {

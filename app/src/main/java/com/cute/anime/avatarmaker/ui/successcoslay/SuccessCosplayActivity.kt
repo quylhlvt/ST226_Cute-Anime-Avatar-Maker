@@ -28,7 +28,9 @@ import com.cute.anime.avatarmaker.utils.saveFileToExternalStorage
 import com.cute.anime.avatarmaker.utils.scanMediaFile
 import com.cute.anime.avatarmaker.utils.shareListFiles
 import com.cute.anime.avatarmaker.utils.showDialogNotifiListener
+import com.cute.anime.avatarmaker.utils.showInter
 import com.cute.anime.avatarmaker.utils.showToast
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
 import javax.inject.Inject
@@ -40,8 +42,19 @@ class SuccessCosplayActivity : AbsBaseActivity<ActivitySuccessCosplayBinding>() 
     var path1 = ""
     var path2 = ""
     override fun getLayoutId(): Int = R.layout.activity_success_cosplay
-
+    override fun onRestart() {
+        super.onRestart()
+        initNativeCollab()
+    }
+    private fun initNativeCollab() {
+        Admob.getInstance().loadNativeCollapNotBanner(
+            this,
+            getString(R.string.native_cl_cosplaySuccess),
+            binding.flNativeCollab
+        )
+    }
     override fun initView() {
+        initNativeCollab()
         val matchPercent = intent.getIntExtra("matchPercent", 0)
         path1 = intent.getStringExtra("cosplayBitmapPath").toString()
         path2 = intent.getStringExtra("currentBitmapPath").toString()
@@ -81,14 +94,22 @@ class SuccessCosplayActivity : AbsBaseActivity<ActivitySuccessCosplayBinding>() 
 
         binding.tvTitle.isSelected = true
         binding.imvBack.isSelected = true
+        binding.tv2.isSelected = true
     }
 
     override fun initAction() {
         binding.apply {
-            imvBack.onSingleClick { finish() }
+            btnTryAgain.onSingleClick {
+                showInter {
+                    setResult(RESULT_OK)
+                    finish()
+                }
+            }
             imvHome.onSingleClick {
-                startActivity(newIntent(applicationContext, MainActivity::class.java))
-                finish()
+                showInter {
+                    startActivity(newIntent(applicationContext, MainActivity::class.java))
+                    finish()
+                }
             }
         }
     }

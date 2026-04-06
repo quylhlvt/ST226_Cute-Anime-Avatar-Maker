@@ -21,6 +21,8 @@ import com.cute.anime.avatarmaker.utils.SharedPreferenceUtils
 import com.cute.anime.avatarmaker.utils.music.MusicLocal
 import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.databinding.ActivitySplashBinding
+import com.lvt.ads.callback.InterCallback
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -30,6 +32,8 @@ import kotlin.collections.forEach
 import kotlin.collections.toList
 @AndroidEntryPoint
 class SplashActivity : AbsBaseActivity<ActivitySplashBinding>() {
+    var interCallBack: InterCallback? = null
+
     @Inject
     lateinit var apiRepository: ApiRepository
     @Inject
@@ -38,23 +42,30 @@ class SplashActivity : AbsBaseActivity<ActivitySplashBinding>() {
     private var dataReady = false
     override fun getLayoutId(): Int = R.layout.activity_splash
     override fun initView() {
+        Admob.getInstance().setTimeLimitShowAds(3000)
+        Admob.getInstance().setTimeCountdownNativeCollab(20000)
         MusicLocal.isInSplashOrTutorial = true
         // Observe data loading TRƯỚC khi load
         observeDataLoading()
-        lifecycleScope.launch {
-            delay(3000)
-            minDelayPassed = true
-            // Nếu data đã sẵn sàng thì chuyển màn ngay
-            if (dataReady) {
-                navigateToNextScreen()
+        interCallBack = object : InterCallback() {
+            override fun onNextAction() {
+                super.onNextAction()
+                lifecycleScope.launch {
+                    minDelayPassed = true
+                    // Nếu data đã sẵn sàng thì chuyển màn ngay
+                    if (dataReady) {
+                        navigateToNextScreen()
+                    }
+                }
             }
         }
-
-
-
+        Admob.getInstance().loadSplashInterAds(
+            this@SplashActivity, getString(R.string.inter_splash), 30000, 3000, interCallBack
+        )
     }
     override fun onResume() {
         super.onResume()
+        Admob.getInstance().onCheckShowSplashWhenFail(this, interCallBack, 1000)
     }
     override fun initAction() {
         // Bắt đầu load data
@@ -93,17 +104,21 @@ class SplashActivity : AbsBaseActivity<ActivitySplashBinding>() {
 
                                         val halfQuantity = maxOf(1, x10.quantity / 2)
 
-                                        for (i in 1..halfQuantity) {
-                                            thumbList.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/thumb_${i}.png")
-                                        }
+
 
                                         if (x10.colorArray.isEmpty()) {
+                                            for (i in 1..halfQuantity) {
+                                            thumbList.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/thumb_${i}.png")
+                                        }
                                             val pathList = arrayListOf<String>()
                                             for (i in 1..halfQuantity) {
                                                 pathList.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/${i}.png")
                                             }
                                             colorList.add(ColorModel("", pathList))
                                         } else {
+                                            for (i in 1..halfQuantity*2+1) {
+                                                thumbList.add(CONST.BASE_URL + "${CONST.BASE_CONNECT}/${x10.position}/${x10.parts}/thumb_${i}.png")
+                                            }
                                             x10.colorArray.split(",").forEach { color ->
                                                 val pathList = arrayListOf<String>()
                                                 for (i in 1..x10.quantity) {  // ✅ có màu → full quantity

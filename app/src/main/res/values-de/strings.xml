@@ -116,6 +116,7 @@
     <string name="tvCosplay5">Frisuren, Outfits, Farben und Accessoires wählst.</string>
     <string name="tvCosplay6">Jede richtige Übereinstimmung erhöht deinen</string>
     <string name="tvCosplay7">Prozentwert (%).</string>
+    <string name="try_again">Erneut versuchen</string>
     <string name="tvCosplay8">Je ähnlicher dein Charakter dem Zufallsbild sieht, desto höher ist dein Endergebnis. Achte auf kleine Details, um das beste Cosplay-Ergebnis zu erzielen.</string>
     <string name="unstable_connection_please_check_your_network_connection">Instabile Verbindung, bitte überprüfe deine Netzwerkverbindung</string>
 </resources>

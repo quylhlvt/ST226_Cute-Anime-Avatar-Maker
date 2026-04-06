@@ -24,11 +24,15 @@ import com.cute.anime.avatarmaker.utils.onSingleClick
 import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.databinding.ActivityCategoryBinding
 import com.cute.anime.avatarmaker.utils.isNetworkConnected
+import com.cute.anime.avatarmaker.utils.logEvent
+import com.cute.anime.avatarmaker.utils.showInter
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.text.get
 
 @AndroidEntryPoint
 class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
@@ -67,10 +71,22 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
     override fun getLayoutId(): Int = R.layout.activity_category
     override fun onRestart() {
         super.onRestart()
+        initNativeCollab()
+    }
 
+    private fun initNativeCollab() {
+        Admob.getInstance().loadNativeCollapNotBanner(
+            this,
+            getString(R.string.native_cl_category),
+            binding.flNativeCollab
+        )
     }
 
     override fun initView() {
+        initNativeCollab()
+        Admob.getInstance().loadNativeAd(
+            this, getString(R.string.native_category), binding.nativeAds, R.layout.ads_native_banner
+        )
         binding.imvBack.isSelected = true
         // Đăng ký broadcast receiver
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
@@ -79,32 +95,33 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
         // Observe data online
         observeDataOnline()
 
-        if (DataHelper.arrBlackCentered.size <= 2 && !isInternetAvailable(this@CategoryActivity)) {
-            DialogExit(
-                this@CategoryActivity,
-                "awaitdataHome"
-            ).show()
-        }
+
         lifecycleScope.launch {
+            if (DataHelper.arrBlackCentered.size <= 2 && !isInternetAvailable(this@CategoryActivity)) {
+                DialogExit(
+                    this@CategoryActivity,
+                    "awaitdataHome"
+                ).show()
+            }
             val hasInternet = withContext(Dispatchers.IO) {
                 isNetworkConnected(this@CategoryActivity)
             }
-            if (!hasInternet) {
+            if (!hasInternet && isInternetAvailable(this@CategoryActivity)) {
                 DialogExit(
                     this@CategoryActivity,
                     "networked"
                 ).show()
             }
 
-        if (DataHelper.arrBg.size == 0) {
-            finish()
-        } else {
+            if (DataHelper.arrBg.size == 0) {
+                finish()
+            } else {
 
-            binding.rcv.itemAnimator = null
-            binding.rcv.adapter = adapter
-            adapter.submitList(DataHelper.arrBlackCentered)
+                binding.rcv.itemAnimator = null
+                binding.rcv.adapter = adapter
+                adapter.submitList(DataHelper.arrBlackCentered)
+            }
         }
-    }
     }
 
     private fun observeDataOnline() {
@@ -250,7 +267,9 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
     override fun initAction() {
         binding.apply {
             imvBack.onSingleClick {
-                finish()
+                showInter {
+                    finish()
+                }
             }
             adapter.onCLick = {
                 if (DataHelper.arrBlackCentered[it].checkDataOnline) {
@@ -263,12 +282,15 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
                                 var a = DataHelper.arrBlackCentered[it].avt.split("/")
                                 var b = a[a.size - 2]
                                 Log.d("testKey", "${b}")
-                                startActivity(
-                                    newIntent(
-                                        this@CategoryActivity,
-                                        CustomviewActivity::class.java
-                                    ).putExtra("data", it)
-                                )
+                                logEvent("click_item_$b", DataHelper.arrBlackCentered[it].avt)
+                                showInter {
+                                    startActivity(
+                                        newIntent(
+                                            this@CategoryActivity,
+                                            CustomviewActivity::class.java
+                                        ).putExtra("data", it)
+                                    )
+                                }
                             } else {
                                 DialogExit(
                                     this@CategoryActivity,
@@ -287,13 +309,15 @@ class CategoryActivity : AbsBaseActivity<ActivityCategoryBinding>() {
                     var a = DataHelper.arrBlackCentered[it].avt.split("/")
                     var b = a[a.size - 2]
                     Log.d("testKey", "${b}")
-                    startActivity(
-                        newIntent(
-                            this@CategoryActivity,
-                            CustomviewActivity::class.java
-                        ).putExtra("data", it)
-                    )
-
+                    logEvent("click_item_$b", DataHelper.arrBlackCentered[it].avt)
+                    showInter {
+                        startActivity(
+                            newIntent(
+                                this@CategoryActivity,
+                                CustomviewActivity::class.java
+                            ).putExtra("data", it)
+                        )
+                    }
                 }
             }
         }

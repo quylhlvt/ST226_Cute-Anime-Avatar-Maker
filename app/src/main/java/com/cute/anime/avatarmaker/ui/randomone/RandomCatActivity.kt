@@ -31,6 +31,9 @@ import com.cute.anime.avatarmaker.utils.isInternetAvailable
 import com.cute.anime.avatarmaker.utils.isNetworkConnected
 import com.cute.anime.avatarmaker.utils.newIntent
 import com.cute.anime.avatarmaker.utils.onSingleClick
+import com.cute.anime.avatarmaker.utils.showInter
+import com.cute.anime.avatarmaker.utils.showInterAll
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -51,6 +54,8 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
     private var loadingJob: Job? = null
     override fun getLayoutId(): Int = R.layout.activity_random_cat
     private var checkCallingDataOnline = false
+    private var hasShownNoInternetDialog = false
+
     private val networkReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val connectivityManager =
@@ -74,12 +79,21 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
             }
         }
     }
-
     override fun onRestart() {
         super.onRestart()
+        initNativeCollab()
+    }
+
+    private fun initNativeCollab() {
+        Admob.getInstance().loadNativeCollapNotBanner(
+            this,
+            getString(R.string.native_cl_random),
+            binding.flNativeCollab
+        )
     }
 
     override fun initView() {
+        initNativeCollab()
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         registerReceiver(networkReceiver, filter)
         observeDataOnline()
@@ -222,16 +236,19 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
                 }
 
                 if (!hasRealInternet) {
-                    // Có wifi/data nhưng không ping được → hiện dialog → finish
-                    withContext(Dispatchers.Main) {
-                        val dialog = DialogExit(this@RandomCatActivity, "networked")
-                        dialog.onClick = { finish() }
-                        dialog.show()
+                    if (!hasShownNoInternetDialog) {
+                        hasShownNoInternetDialog = true
+                        withContext(Dispatchers.Main) {
+                            val dialog = DialogExit(this@RandomCatActivity, "networked")
+                            dialog.show()
+                        }
                     }
-                    return@launch
+                    availableModels = DataHelper.arrBlackCentered.filter { !it.checkDataOnline }
+                } else {
+                    availableModels = DataHelper.arrBlackCentered
+
                 }
 
-                availableModels = DataHelper.arrBlackCentered
             }
 
             if (availableModels.isEmpty()) {
@@ -437,7 +454,11 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
 
     override fun initAction() {
         binding.apply {
-            imvBack.onSingleClick { finish() }
+            imvBack.onSingleClick {
+                showInter {
+                    finish()
+                }
+            }
 
             btnRandomize.onSingleClick {
                 imvNext.isEnabled = false
@@ -457,6 +478,7 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
                 characterBitmap = null
 
                 randomizeCharacter()
+                showInterAll()
             }
 
             imvNext.onSingleClick {
@@ -469,19 +491,21 @@ class RandomCatActivity : AbsBaseActivity<ActivityRandomCatBinding>() {
                             val hasInternet = withContext(Dispatchers.IO) {
                                 isNetworkConnected(this@RandomCatActivity)
                             }
-                            if (!hasInternet&& model.checkDataOnline) {
+                            if (!hasInternet && model.checkDataOnline) {
                                 DialogExit(this@RandomCatActivity, "networked").show()
                             } else {
                                 val index = DataHelper.arrBlackCentered.indexOf(model)
                                 if (index != -1) {
-                                    startActivity(
-                                        newIntent(
-                                            this@RandomCatActivity,
-                                            CustomviewActivity::class.java
+                                    showInter {
+                                        startActivity(
+                                            newIntent(
+                                                this@RandomCatActivity,
+                                                CustomviewActivity::class.java
+                                            )
+                                                .putExtra("data", index)
+                                                .putExtra("arr", randomCoords)
                                         )
-                                            .putExtra("data", index)
-                                            .putExtra("arr", randomCoords)
-                                    )
+                                    }
                                 }
                             }
                         }

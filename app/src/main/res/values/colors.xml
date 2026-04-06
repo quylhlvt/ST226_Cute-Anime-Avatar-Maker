@@ -66,16 +66,18 @@
     <color name="native_text_title">#000000</color>
     <color name="native_text_body">#000000</color>
     <color name="native_bg_hide">#ffffff</color>
-    <color name="native_bg_stroke">#80C5C5C5</color>
-    <color name="native_bg_ad">#66FEDEAF</color>
-    <color name="native_bg_btn">#FF7514</color>
-    <color name="native_btn_bg">#FF7514</color>
-    <color name="native_collap_btn_bg">#FF7514</color>
-    <color name="native_bg">#66FEDEAF</color>
-    <color name="colorPrimary">#FF7514</color>
+    <color name="native_bg_stroke">#66E0A2D0</color>
+    <color name="native_bg_ad1">#ECBDC4</color>
+    <color name="native_bg_ad">#66F8C0F2</color>
+    <color name="native_bg_btn">#ECBDC4</color>
+    <color name="native_btn_bg">#ECBDC4</color>
+    <color name="native_collap_btn_bg">#ECBDC4</color>
+    <color name="native_bg">#66F8C0F2</color>
+    <color name="colorPrimary">#ECBDC4</color>
     <color name="colorWhite">#FFFFFF</color>
-    <color name="native_text_color_btn">#FFFFFF</color>
-    <color name="native_text_color">#000000</color>
+    <color name="native_text_color_btn">#70364B</color>
+    <color name="native_text_color">#70364B</color>
+
 
     <color name="stroke_forcus_1">#6ADFFF</color>
     <color name="stroke_forcus_2">#3175EB</color>

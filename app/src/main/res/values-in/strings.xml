@@ -116,6 +116,7 @@
     <string name="tvCosplay5">gaya rambut, pakaian, warna, dan aksesori yang tepat.</string>
     <string name="tvCosplay6">Setiap kecocokan yang benar meningkatkan</string>
     <string name="tvCosplay7">skor persentase kamu (%).</string>
+    <string name="try_again">Coba Lagi</string>
     <string name="tvCosplay8">Semakin mirip karaktermu dengan gambar acak, semakin tinggi skor akhirmu. Perhatikan detail kecil untuk mencapai hasil cosplay terbaik.</string>
     <string name="unstable_connection_please_check_your_network_connection">Koneksi tidak stabil, periksa koneksi jaringan kamu</string>
 </resources>

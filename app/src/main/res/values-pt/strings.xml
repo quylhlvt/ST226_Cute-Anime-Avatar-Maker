@@ -116,6 +116,7 @@
     <string name="tvCosplay5">penteados, roupas, cores e acessórios certos.</string>
     <string name="tvCosplay6">Cada correspondência correta aumenta sua</string>
     <string name="tvCosplay7">pontuação percentual (%).</string>
+    <string name="try_again">Tentar Novamente</string>
     <string name="tvCosplay8">Quanto mais seu personagem se parecer com a imagem aleatória, maior será sua pontuação final. Preste atenção aos pequenos detalhes para obter o melhor resultado de cosplay.</string>
     <string name="unstable_connection_please_check_your_network_connection">Conexão instável, verifique sua conexão de rede</string>
 </resources>

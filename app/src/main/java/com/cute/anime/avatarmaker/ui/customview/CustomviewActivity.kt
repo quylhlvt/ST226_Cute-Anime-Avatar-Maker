@@ -2,6 +2,7 @@ package com.cute.anime.avatarmaker.ui.customview
 
 import android.content.Intent
 import android.graphics.drawable.Drawable
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -29,11 +30,15 @@ import com.cute.anime.avatarmaker.utils.fromList
 import com.cute.anime.avatarmaker.utils.inhide
 import com.cute.anime.avatarmaker.utils.isInternetAvailable
 import com.cute.anime.avatarmaker.utils.isNetworkConnected
+import com.cute.anime.avatarmaker.utils.logEvent
 import com.cute.anime.avatarmaker.utils.onSingleClick
 import com.cute.anime.avatarmaker.utils.saveBitmap
 import com.cute.anime.avatarmaker.utils.show
+import com.cute.anime.avatarmaker.utils.showInter
+import com.cute.anime.avatarmaker.utils.showInterAll
 import com.cute.anime.avatarmaker.utils.showToast
 import com.cute.anime.avatarmaker.utils.viewToBitmap
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -97,9 +102,21 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
     // Call this when you show loading
     override fun onRestart() {
         super.onRestart()
+        initNativeCollab()
+
+    }
+
+    private fun initNativeCollab() {
+        Admob.getInstance().loadNativeCollapNotBanner(
+            this,
+            getString(R.string.native_cl_custom),
+            binding.flNativeCollab
+        )
     }
 
     override fun initView() {
+        initNativeCollab()
+
 //        binding.txtContent.post {
 //            binding.txtContent.gradientHorizontal(
 //                startColor = "#01579B".toColorInt(),
@@ -404,7 +421,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                     val hasInternet = withContext(Dispatchers.IO) {
                         isNetworkConnected(this@CustomviewActivity)
                     }
-                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline && !hasInternet) {
                         DialogExit(this@CustomviewActivity, "networked").show()
                     } else {
                         val recyclerState = binding.rcvPart.layoutManager?.onSaveInstanceState()
@@ -433,7 +450,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                     val hasInternet = withContext(Dispatchers.IO) {
                         isNetworkConnected(this@CustomviewActivity)
                     }
-                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline && !hasInternet) {
                         DialogExit(this@CustomviewActivity, "networked").show()
                     } else {
                         val newPos = it
@@ -500,7 +517,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                     val hasInternet = withContext(Dispatchers.IO) {
                         isNetworkConnected(this@CustomviewActivity)
                     }
-                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                    if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline && !hasInternet) {
                         DialogExit(this@CustomviewActivity, "networked").show()
                     } else {
                         when (type) {
@@ -574,23 +591,24 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
         }
         binding.apply {
             imvShowColor.onSingleClick {
-                if (listData[adapterNav.posNav].listPath.size <= 1) return@onSingleClick
+                val navPos = adapterNav.posNav
+                if ((listData.getOrNull(navPos)?.listPath?.size ?: 0) <= 1) return@onSingleClick
 
-                val newState = !arrShowColor[adapterNav.posNav]
-                arrShowColor[adapterNav.posNav] = newState
+                // FIX: không toggle, imvShowColor chỉ có nhiệm vụ MỞ
+                if (navPos < arrShowColor.size) arrShowColor[navPos] = true
 
-                // Animate visibility change
-                if (newState) {
+                if (llColor.visibility == View.VISIBLE) return@onSingleClick
 
-//                        imvShowColor.setImageResource(R.drawable.imv_color)
-                    llColor.visibility = View.VISIBLE
-                    llColor.alpha = 0f
-                    llColor.animate().alpha(1f).setDuration(200).start()
-
-
-                }
+                llColor.visibility = View.VISIBLE
+                llColor.alpha = 0f
+                llColor.animate().alpha(1f).setDuration(200).start()
             }
+
             imvEndColor.onSingleClick {
+                val navPos = adapterNav.posNav
+                // imvEndColor có nhiệm vụ ĐÓNG và nhớ trạng thái
+                if (navPos < arrShowColor.size) arrShowColor[navPos] = false
+
                 llColor.animate().alpha(0f).setDuration(200).withEndAction {
                     llColor.visibility = View.INVISIBLE
                 }.start()
@@ -604,7 +622,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                         val hasInternet = withContext(Dispatchers.IO) {
                             isNetworkConnected(this@CustomviewActivity)
                         }
-                        if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                        if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline && !hasInternet) {
                             DialogExit(this@CustomviewActivity, "networked").show()
                         } else {
                             var dialog = DialogExit(
@@ -630,6 +648,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                                     putImage(bodyPartModel.icon, 1, true)
                                 }
                                 putImage(listData[0].icon, 1, false, 0, 0)
+                                showInterAll()
                             }
                             dialog.show()
                         }
@@ -644,11 +663,13 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
             imvBack.onSingleClick {
                 var dialog = DialogExit(
                     this@CustomviewActivity,
-                    "exit"
+                    "exit",
+                    0
                 )
                 dialog.onClick = {
-                    finish()
-
+                    showInter {
+                        finish()
+                    }
                 }
                 dialog.show()
             }
@@ -673,7 +694,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                         val hasInternet = withContext(Dispatchers.IO) {
                             isNetworkConnected(this@CustomviewActivity)
                         }
-                        if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline &&!hasInternet) {
+                        if (DataHelper.arrBlackCentered[blackCentered].checkDataOnline && !hasInternet) {
                             DialogExit(this@CustomviewActivity, "networked").show()
                         } else {
                             // Disable save ngay lập tức
@@ -681,9 +702,9 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                             btnSave.alpha = 0.5f
 
                             countRandom++
-//                    if (countRandom == 3) {
-//                        btnDice.inhide()
-//                    }
+                    if (countRandom == 3) {
+                        btnDice.inhide()
+                    }
                             listData.forEachIndexed { index, partBody ->
                                 if (partBody.listPath.size > 1) {
                                     arrInt[index][1] = (0..<partBody.listPath.size).random()
@@ -719,6 +740,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                             adapterPart.setPos(arrInt[adapterNav.posNav][0])
                             adapterColor.setPos(arrInt[adapterNav.posNav][1])
                             submitPartList()
+                            showInter {
                             updateColorSectionVisibility()
 
                             binding.rcvPart.post {
@@ -734,7 +756,7 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                                 btnSave.alpha = 1f
                             }, 2000)
                         }
-                    }
+                    }}
                 } else {
                     DialogExit(this@CustomviewActivity, "loadingnetwork").show()
                 }
@@ -754,7 +776,8 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
 //                animationView.visibility = View.VISIBLE
                 val a = arrBlackCentered[blackCentered].avt.split("/")
                 var b = a[a.size - 2]
-
+                logEvent(" click_item_${b}_done")
+                Log.d("logevent", "click_item_${b}_done")
                 saveBitmap(
                     this@CustomviewActivity,
                     viewToBitmap(rl),
@@ -782,14 +805,13 @@ class CustomviewActivity : AbsBaseActivity<ActivityCustomizeBinding>() {
                                 isFlipped = !checkRevert
                             )
                         )
-
+                    showInter {
                         startActivity(
                             Intent(
                                 this@CustomviewActivity, BackgroundActivity::class.java
                             ).putExtra("path", path)
                         )
-
-
+                    }
                     } else {
                         llLoading.visibility = View.GONE
 //                        animationView.visibility = View.GONE

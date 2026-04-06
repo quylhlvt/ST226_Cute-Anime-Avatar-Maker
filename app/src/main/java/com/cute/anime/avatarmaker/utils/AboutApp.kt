@@ -34,6 +34,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
@@ -59,6 +60,7 @@ import android.view.ViewTreeObserver
 import android.view.Window
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
@@ -86,6 +88,9 @@ import com.google.android.gms.tasks.Task
 import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManagerFactory
 import com.cute.anime.avatarmaker.R
+import com.lvt.ads.callback.InterCallback
+import com.lvt.ads.event.AdmobEvent
+import com.lvt.ads.util.Admob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -1798,38 +1803,34 @@ fun saveFileToExternalStorage(
         }
     }
 }
-//
-//fun Activity.showInter(context:Context,action: (() -> Unit)) {
-//    MusicLocal.pause()
-//    Admob.getInstance().showInterAll(this, object : InterCallback() {
-//        override fun onNextAction() {
-//            super.onNextAction()
-//            action()
-//            MusicLocal.play(context)
-//        }
-//    })
-//}
-//fun Activity.loadNativeCollabAds(id: String, layout: FrameLayout) {
-//    Admob.getInstance().loadNativeCollap(this, id, layout)
-//}
-//
-//fun Activity.showInterAll(context: Context) {
-//    MusicLocal.pause()
-//    Admob.getInstance().showInterAll(this, object : InterCallback() {
-//        override fun onNextAction() {
-//            super.onNextAction()
-//            MusicLocal.play(context)
-//        }
-//    })
-//}
-//fun Activity.logEvent(nameEvent: String, value: String) {
-//    val bundle = Bundle()
-//    bundle.putString("link", value)
-//    AdmobEvent.logEvent(this, nameEvent, bundle)
-//}
-//fun Activity.logEvent(nameEvent: String) {
-//    AdmobEvent.logEvent(this, nameEvent, null)
-//}
+
+fun Activity.showInter(action: (() -> Unit)) {
+    Admob.getInstance().showInterAll(this, object : InterCallback() {
+        override fun onNextAction() {
+            super.onNextAction()
+            action()
+        }
+    })
+}
+fun Activity.loadNativeCollabAds(id: String, layout: FrameLayout) {
+    Admob.getInstance().loadNativeCollap(this, id, layout)
+}
+
+fun Activity.showInterAll() {
+    Admob.getInstance().showInterAll(this, object : InterCallback() {
+        override fun onNextAction() {
+            super.onNextAction()
+        }
+    })
+}
+fun Activity.logEvent(nameEvent: String, value: String) {
+    val bundle = Bundle()
+    bundle.putString("link", value)
+    AdmobEvent.logEvent(this, nameEvent, bundle)
+}
+fun Activity.logEvent(nameEvent: String) {
+    AdmobEvent.logEvent(this, nameEvent, null)
+}
 
 
 

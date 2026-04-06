@@ -22,20 +22,26 @@ import com.cute.anime.avatarmaker.utils.showToast
 import com.bumptech.glide.Glide
 import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.databinding.ActivitySuccessBinding
+import com.cute.anime.avatarmaker.utils.loadNativeCollabAds
 import com.cute.anime.avatarmaker.utils.shareListFiles
+import com.cute.anime.avatarmaker.utils.showInter
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
 import javax.inject.Inject
 import kotlin.getValue
+
 @AndroidEntryPoint
 class SuccessActivity : AbsBaseActivity<ActivitySuccessBinding>() {
     var path = ""
     override fun getLayoutId(): Int = R.layout.activity_success
     private val permissionViewModel: PermissionViewModel by viewModels()
+
     @Inject
     lateinit var sharedPreference: SharedPreferenceUtils
     override fun initView() {
-
+        loadNativeCollabAds(
+            getString(R.string.native_cl_ss), binding.flNativeCollab
+        )
         path = intent.getStringExtra("path").toString()
         Glide.with(applicationContext).load(path).into(binding.imv)
         binding.apply {
@@ -46,7 +52,7 @@ class SuccessActivity : AbsBaseActivity<ActivitySuccessBinding>() {
 
 //            tvContent.isSelected = true
         }
-      }
+    }
 
     override fun initAction() {
         binding.apply {
@@ -59,6 +65,7 @@ class SuccessActivity : AbsBaseActivity<ActivitySuccessBinding>() {
             }
 
             imvHome.onSingleClick {
+                showInter {
                     startActivity(
                         newIntent(
                             applicationContext,
@@ -67,8 +74,10 @@ class SuccessActivity : AbsBaseActivity<ActivitySuccessBinding>() {
                     )
                     finish()
                 }
+            }
 
             btnMyWork.onSingleClick {
+                showInter {
                     startActivity(
                         newIntent(
                             applicationContext,
@@ -77,16 +86,19 @@ class SuccessActivity : AbsBaseActivity<ActivitySuccessBinding>() {
                     )
                     finish()
                 }
+            }
 
             btnDownload.onClick {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     performDownload()
                 } else {
-                    handlePermissionRequest(isStorage = true)}
+                    handlePermissionRequest(isStorage = true)
+                }
 
             }
         }
     }
+
     private fun handlePermissionRequest(isStorage: Boolean) {
         val permissions = if (isStorage) {
             permissionViewModel.getStoragePermissions()
@@ -102,13 +114,15 @@ class SuccessActivity : AbsBaseActivity<ActivitySuccessBinding>() {
 
         // Kiểm tra nếu đã từ chối nhiều lần → gợi ý vào Settings
         if (permissionViewModel.needGoToSettings(sharedPreference, isStorage)) {
-            val dialogRes = if (isStorage) R.string.reques_storage else R.string.content_dialog_notification
+            val dialogRes =
+                if (isStorage) R.string.reques_storage else R.string.content_dialog_notification
             showDialogNotifiListener(dialogRes)
             return
         }
 
         // Request permission bình thường
-        val requestCode = if (isStorage) CONST.REQUEST_STORAGE_PERMISSION else CONST.REQUEST_NOTIFICATION_PERMISSION
+        val requestCode =
+            if (isStorage) CONST.REQUEST_STORAGE_PERMISSION else CONST.REQUEST_NOTIFICATION_PERMISSION
         ActivityCompat.requestPermissions(this, permissions, requestCode)
     }
 
@@ -151,6 +165,6 @@ class SuccessActivity : AbsBaseActivity<ActivitySuccessBinding>() {
             }
         }
 
-}
+    }
 
 }

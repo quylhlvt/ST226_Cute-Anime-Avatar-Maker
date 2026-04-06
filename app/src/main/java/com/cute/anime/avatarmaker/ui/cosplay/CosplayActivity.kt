@@ -35,19 +35,27 @@ import com.cute.anime.avatarmaker.utils.isNetworkConnected
 import com.cute.anime.avatarmaker.utils.newIntent
 import com.cute.anime.avatarmaker.utils.onSingleClick
 import com.cute.anime.avatarmaker.utils.show
+import com.cute.anime.avatarmaker.utils.showInter
+import com.cute.anime.avatarmaker.utils.showInterAll
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
+import kotlin.collections.get
+import kotlin.text.clear
+import kotlin.text.get
 
 @AndroidEntryPoint
 class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
 
     override fun getLayoutId(): Int = R.layout.activity_cosplay
+    private var randomPaths: ArrayList<String> = arrayListOf()
 
     @Inject
     lateinit var apiRepository: ApiRepository
@@ -58,6 +66,7 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
     private var characterBitmap: Bitmap? = null
     private var loadingJob: Job? = null
     private var checkCallingDataOnline = false
+    private var hasShownNoInternetDialog = false
 
     private val networkReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -85,9 +94,20 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
 
     override fun onRestart() {
         super.onRestart()
+        initNativeCollab()
+
+    }
+
+    private fun initNativeCollab() {
+        Admob.getInstance().loadNativeCollapNotBanner(
+            this,
+            getString(R.string.native_cl_cosplay),
+            binding.flNativeCollab
+        )
     }
 
     override fun initView() {
+        initNativeCollab()
         val space = " "
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         registerReceiver(networkReceiver, filter)
@@ -111,54 +131,54 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
                     this@CosplayActivity,
                     getString(R.string.tvCosplay1),
                     R.color.app_color,
-                    R.font.hvd_comic_serif_pro
+                    R.font.janda_manatee_solid
                 ),
                 space,
                 changeText(
                     this@CosplayActivity,
                     getString(R.string.tvCosplay2),
                     R.color.white,
-                    R.font.hvd_comic_serif_pro
+                    R.font.janda_manatee_solid
                 ),
                 space,
                 changeText(
                     this@CosplayActivity,
                     getString(R.string.tvCosplay3),
                     R.color.app_color,
-                    R.font.hvd_comic_serif_pro
+                    R.font.janda_manatee_solid
                 ),
                 space,
                 changeText(
                     this@CosplayActivity,
                     getString(R.string.tvCosplay4),
                     R.color.white,
-                    R.font.hvd_comic_serif_pro
+                    R.font.janda_manatee_solid
                 ), space,
                 changeText(
                     this@CosplayActivity,
                     getString(R.string.tvCosplay5),
                     R.color.app_color,
-                    R.font.hvd_comic_serif_pro
+                    R.font.janda_manatee_solid
                 ),
                 space,
                 changeText(
                     this@CosplayActivity,
                     getString(R.string.tvCosplay6),
                     R.color.white,
-                    R.font.hvd_comic_serif_pro
+                    R.font.janda_manatee_solid
                 ),
                 space,
                 changeText(
                     this@CosplayActivity,
                     getString(R.string.tvCosplay7),
                     R.color.app_color,
-                    R.font.hvd_comic_serif_pro
+                    R.font.janda_manatee_solid
                 ), space,
                 changeText(
                     this@CosplayActivity,
                     getString(R.string.tvCosplay8),
                     R.color.white,
-                    R.font.hvd_comic_serif_pro
+                    R.font.janda_manatee_solid
                 )
 
             )
@@ -290,16 +310,19 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
                 }
 
                 if (!hasRealInternet) {
-                    // Có wifi/data nhưng không ping được → hiện dialog → finish
-                    withContext(Dispatchers.Main) {
-                        val dialog = DialogExit(this@CosplayActivity, "networked")
-                        dialog.onClick = { finish() }
-                        dialog.show()
+                    if (!hasShownNoInternetDialog) {
+                        hasShownNoInternetDialog = true
+                        withContext(Dispatchers.Main) {
+                            val dialog = DialogExit(this@CosplayActivity, "networked")
+                            dialog.show()
+                        }
                     }
-                    return@launch
+                    availableModels = DataHelper.arrBlackCentered.filter { !it.checkDataOnline }
+                } else {
+                    availableModels = DataHelper.arrBlackCentered
+
                 }
 
-                availableModels = DataHelper.arrBlackCentered
             }
 
             if (availableModels.isEmpty()) {
@@ -330,24 +353,23 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
                 list.forEach { data ->
                     val bodyPart = model.bodyPart.find { it.icon == data }
                     val pair = if (bodyPart != null) {
-                        val path = bodyPart.listPath[0].listPath
                         val color = bodyPart.listPath
+                        val randomColor = (0 until color.size).random()
+                        // FIX: lấy path từ đúng color đã random, không hardcode [0]
+                        val path = color[randomColor].listPath
 
-                        // FIX: Bỏ qua "none" và "dice" khi random
                         val validIndices = path.indices.filter { idx ->
-                            val value = path[idx]
-                            value != "none" && value != "dice"
+                            path[idx] != "none" && path[idx] != "dice"
                         }
 
                         val randomValue = if (validIndices.isNotEmpty()) {
                             validIndices.random()
                         } else {
-                            // Nếu không có giá trị hợp lệ, chọn index đầu tiên không phải none
-                            if (path[0] == "none") 2 else 1
+                            -1
                         }
 
-                        val randomColor = (0 until color.size).random()
-                        arrayListOf(randomValue, randomColor)
+                        if (randomValue == -1) arrayListOf(-1, -1)
+                        else arrayListOf(randomValue, randomColor)
                     } else {
                         arrayListOf(-1, -1)
                     }
@@ -356,6 +378,26 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
                 randomCoords = coords
 
                 Log.d("RandomCat", "Generated coords: $coords")
+                randomCoords = coords
+
+// THÊM: build randomPaths từ coords vừa tạo
+                val paths = arrayListOf<String>()
+                list.forEachIndexed { index, icon ->
+                    val bodyPart = model.bodyPart.find { it.icon == icon }
+                    val coord = coords.getOrNull(index)
+                    val path =
+                        if (bodyPart != null && coord != null && coord[0] >= 0 && coord[1] >= 0) {
+                            bodyPart.listPath
+                                .getOrNull(coord[1])?.listPath
+                                ?.getOrNull(coord[0])
+                                ?.takeIf { it != "none" && it != "dice" } ?: ""
+                        } else ""
+                    paths.add(path)
+                }
+                randomPaths = paths
+
+                Log.d("RandomCat", "Generated coords: $coords")
+                Log.d("RandomCat", "Generated paths: $paths")
                 loadCharacterBitmap(model, list, coords)
             }
         }
@@ -436,6 +478,7 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
                     // QUAN TRỌNG: Clear Glide trước để dừng gif
                     Glide.with(this@CosplayActivity).clear(binding.imgCharacter)
                     binding.imgCharacter.setImageBitmap(merged)
+                    delay(200)
                     binding.apply {
                         btnCosplay.isEnabled = true
                         btnRandomize.isEnabled = true
@@ -469,6 +512,7 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
             }
         }
     }
+
 
     private suspend fun calculateTargetSize(
         model: CustomModel,
@@ -508,14 +552,16 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
 
     override fun initAction() {
         binding.apply {
-            imvBack.onSingleClick { finish() }
-
+            imvBack.onSingleClick {
+                showInter {
+                    finish()
+                }
+            }
             btnRandomize.onSingleClick {
                 btnCosplay.isEnabled = false
                 btnRandomize.isEnabled = false
                 btnCosplay.alpha = 0.5f
                 btnRandomize.alpha = 0.5f
-
                 imgCharacter.setImageBitmap(null)
                 progressBar.visibility = View.VISIBLE
                 imgCharacter.visibility = View.GONE
@@ -523,11 +569,10 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
                     .asGif()
                     .load(R.drawable.gif)
                     .into(imgCharacter)
-
                 characterBitmap?.recycle()
                 characterBitmap = null
-
                 randomizeCharacter()
+                showInterAll()
             }
             btnCancel.onSingleClick {
                 dialogCoplay.hide()
@@ -549,7 +594,7 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
                             val hasInternet = withContext(Dispatchers.IO) {
                                 isNetworkConnected(this@CosplayActivity)
                             }
-                            if (!hasInternet&& model.checkDataOnline) {
+                            if (!hasInternet && model.checkDataOnline) {
                                 DialogExit(this@CosplayActivity, "networked").show()
                             } else {
                                 try {
@@ -575,8 +620,8 @@ class CosplayActivity : AbsBaseActivity<ActivityCosplayBinding>() {
                                                 ShowActivity::class.java
                                             )
                                                 .putExtra("data", index)
-                                                .putExtra("arr", randomCoords)
                                                 .putExtra("imgCoslay", cacheFile.absolutePath)
+                                                .putExtra("randomPaths", randomPaths)
                                         )
                                     }
                                 } catch (e: Exception) {

@@ -41,8 +41,10 @@ import com.cute.anime.avatarmaker.utils.SharedPreferenceUtils
 import com.cute.anime.avatarmaker.utils.hide
 import com.cute.anime.avatarmaker.utils.isInternetAvailable
 import com.cute.anime.avatarmaker.utils.isNetworkConnected
+import com.cute.anime.avatarmaker.utils.loadNativeCollabAds
 import com.cute.anime.avatarmaker.utils.show
 import com.cute.anime.avatarmaker.utils.showDialogNotifiListener
+import com.cute.anime.avatarmaker.utils.showInter
 import com.cute.anime.avatarmaker.utils.toList
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -105,7 +107,9 @@ class ViewActivity : AbsBaseActivity<ActivityViewBinding>() {
 
     override fun initView() {
         binding.imvBack.isSelected = true
-
+        loadNativeCollabAds(
+            getString(R.string.native_cl_detail), binding.flNativeCollab
+        )
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         registerReceiver(networkReceiver, filter)
         DataHelper.arrDataOnline.observe(this) {
@@ -238,15 +242,17 @@ class ViewActivity : AbsBaseActivity<ActivityViewBinding>() {
                                         var a = avatar.pathAvatar.split("/")
                                         var b = a[a.size - 2]
                                         Log.d("indexb", b)
-                                        startActivity(
-                                            Intent(
-                                                applicationContext,
-                                                CustomviewActivity::class.java
-                                            ).putExtra("data", index)
-                                                .putExtra("arr", toList(avatar.arr))
-                                                .putExtra("isFlipped", avatar.isFlipped)
-                                                .putExtra("fileName", File(avatar.path).name)
-                                        )
+                                        showInter {
+                                            startActivity(
+                                                Intent(
+                                                    applicationContext,
+                                                    CustomviewActivity::class.java
+                                                ).putExtra("data", index)
+                                                    .putExtra("arr", toList(avatar.arr))
+                                                    .putExtra("isFlipped", avatar.isFlipped)
+                                                    .putExtra("fileName", File(avatar.path).name)
+                                            )
+                                        }
                                     } else {
                                         lifecycleScope.launch {
                                             val dialog = DialogExit(

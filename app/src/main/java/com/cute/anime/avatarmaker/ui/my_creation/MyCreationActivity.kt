@@ -60,9 +60,11 @@ import com.cute.anime.avatarmaker.utils.share.whatsapp.WhatsappSharingActivity
 import com.cute.anime.avatarmaker.utils.shareListFiles
 import com.cute.anime.avatarmaker.utils.show
 import com.cute.anime.avatarmaker.utils.showDialogNotifiListener
+import com.cute.anime.avatarmaker.utils.showInter
 import com.cute.anime.avatarmaker.utils.showSystemUI
 import com.cute.anime.avatarmaker.utils.showToast
 import com.cute.anime.avatarmaker.utils.toList
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -119,12 +121,14 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
             onClick = { pos, type ->
                 when (type) {
                     "item" -> {
-                        startActivity(
-                            newIntent(
-                                this@MyCreationActivity,
-                                ViewActivity::class.java
-                            ).putExtra("data", arrPathAvatar[pos]).putExtra("type", "avatar")
-                        )
+                        showInter {
+                            startActivity(
+                                newIntent(
+                                    this@MyCreationActivity,
+                                    ViewActivity::class.java
+                                ).putExtra("data", arrPathAvatar[pos]).putExtra("type", "avatar")
+                            )
+                        }
                     }
 
                     "delete" -> {
@@ -169,32 +173,36 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
                                     val hasInternet = withContext(Dispatchers.IO) {
                                         isNetworkConnected(this@MyCreationActivity)
                                     }
-                                    if (hasInternet && avatar.online == true) {
+                                    if (!hasInternet && avatar.online == true ) {
+                                        val dialog = DialogExit(this@MyCreationActivity, "networked")
+                                        dialog.show()
+                                    } else {
                                         var index =
                                             DataHelper.arrBlackCentered.indexOfFirst { it.avt == avatar.pathAvatar }
                                         if (index > -1) {
-                                            startActivity(
-                                                Intent(
-                                                    this@MyCreationActivity,
-                                                    CustomviewActivity::class.java
-                                                ).putExtra("data", index)
-                                                    .putExtra("arr", toList(avatar.arr))
-                                                    .putExtra("checkEdit", true)
-                                                    .putExtra("isFlipped", avatar.isFlipped)
-                                                    .putExtra("fileName", File(avatar.path).name)
-                                            )
-                                        } else {
-                                                val dialog = DialogExit(
-                                                    this@MyCreationActivity,
-                                                    "awaitdata"
+                                            showInter {
+                                                startActivity(
+                                                    Intent(
+                                                        this@MyCreationActivity,
+                                                        CustomviewActivity::class.java
+                                                    ).putExtra("data", index)
+                                                        .putExtra("arr", toList(avatar.arr))
+                                                        .putExtra("checkEdit", true)
+                                                        .putExtra("isFlipped", avatar.isFlipped)
+                                                        .putExtra("fileName", File(avatar.path).name)
                                                 )
-                                                dialog.show()
+                                            }
+                                        } else {
+                                            val dialog = DialogExit(
+                                                this@MyCreationActivity,
+                                                "awaitdata"
+                                            )
+                                            dialog.show()
 
                                         }
-                                    } else {
-                                        val dialog = DialogExit(this@MyCreationActivity, "networked")
-                                        dialog.show()
+
                                     }
+
                                 }
                             }
                         }
@@ -203,7 +211,7 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
                     "longclick" -> {
                         this@MyCreationActivity.binding.rcvAvatar.setMargins(
                             15.dp(this@MyCreationActivity),
-                            16.dp(this@MyCreationActivity),
+                            5.dp(this@MyCreationActivity),
                             15.dp(this@MyCreationActivity),
                             50
                         )
@@ -252,12 +260,14 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
             onClick = { pos, type ->
                 when (type) {
                     "item" -> {
-                        startActivity(
-                            newIntent(
-                                this@MyCreationActivity,
-                                ViewActivity::class.java
-                            ).putExtra("data", arrPathDesign[pos])
-                        )
+                        showInter {
+                            startActivity(
+                                newIntent(
+                                    this@MyCreationActivity,
+                                    ViewActivity::class.java
+                                ).putExtra("data", arrPathDesign[pos])
+                            )
+                        }
                     }
 
                     "delete" -> {
@@ -281,7 +291,7 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
                     "longclick" -> {
                         this@MyCreationActivity.binding.rcvDesign.setMargins(
                             15.dp(this@MyCreationActivity),
-                            16.dp(this@MyCreationActivity),
+                            5.dp(this@MyCreationActivity),
                             15.dp(this@MyCreationActivity),
                             50
                         )
@@ -326,8 +336,14 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
     }
 
     override fun getLayoutId(): Int = R.layout.activity_my_creation
-
+    private fun initNativeCollab() {
+        Admob.getInstance().loadNativeCollapNotBanner(this, getString(R.string.native_cl_myWork), binding.flNativeCollab)
+    }
     override fun initView() {
+        Admob.getInstance().loadNativeAd(
+            this, getString(R.string.native_myWork), binding.nativeAds, R.layout.ads_native_banner
+        )
+        initNativeCollab()
         binding.apply {
             tvTitle.isSelected = true
             tvNoItem.isSelected = true
@@ -450,7 +466,10 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
 
     override fun onRestart() {
         super.onRestart()
-
+        Admob.getInstance().loadNativeAd(
+            this, getString(R.string.native_myWork), binding.nativeAds, R.layout.ads_native_banner
+        )
+        initNativeCollab()
         arrPathAvatar.clear()
         arrPathDesign.clear()
         adapterDesign.submitList(arrPathDesign)
@@ -463,13 +482,13 @@ class MyCreationActivity : WhatsappSharingActivity<ActivityMyCreationBinding>() 
     fun hideLongClick() {
         this@MyCreationActivity.binding.rcvAvatar.setMargins(
             15.dp(this@MyCreationActivity),
-            16.dp(this@MyCreationActivity),
+            5.dp(this@MyCreationActivity),
             15.dp(this@MyCreationActivity),
             0
         )
         this@MyCreationActivity.binding.rcvDesign.setMargins(
             15.dp(this@MyCreationActivity),
-            16.dp(this@MyCreationActivity),
+            5.dp(this@MyCreationActivity),
             15.dp(this@MyCreationActivity),
             0
         )

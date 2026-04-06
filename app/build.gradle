@@ -15,8 +15,8 @@ android {
         applicationId "com.cute.anime.avatarmaker"
         minSdk 24
         targetSdk 36
-        versionCode 1
-        versionName "1.0.0"
+        versionCode 2
+        versionName "1.0.1"
         def formattedDate = new Date().format('MM.dd.yyyy')
         archivesBaseName = "Cute_Anime_Avatar_Maker${versionName}_${formattedDate}"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -115,14 +115,13 @@ dependencies {
     implementation ("com.google.firebase:firebase-messaging:25.0.1")
     implementation ("com.google.firebase:firebase-config:23.0.1")
 //    //ads
-//    implementation 'com.github.LVTapp:AdsLibrary:1.5.5'
-//    implementation 'com.google.android.gms:play-services-ads:24.9.0'
-//    implementation 'com.google.ads.mediation:facebook:6.21.0.0'
-//    implementation 'com.google.ads.mediation:vungle:7.6.2.0'
-//    implementation 'com.google.ads.mediation:applovin:13.5.1.0'
-//    implementation 'com.google.ads.mediation:pangle:7.8.0.8.0'
-//    implementation 'com.google.ads.mediation:ironsource:9.2.0.0'
-//    implementation 'com.unity3d.ads:unity-ads:4.16.5'
-//    implementation 'com.google.ads.mediation:unity:4.16.5.0'
-//    implementation 'com.google.ads.mediation:mintegral:17.0.41.0'
+    implementation 'com.github.LVTapp:AdsLibrary:1.5.5'
+    implementation 'com.google.android.gms:play-services-ads:24.9.0'
+    implementation 'com.google.ads.mediation:facebook:6.21.0.0'
+    implementation 'com.google.ads.mediation:applovin:13.5.1.0'
+    implementation 'com.google.ads.mediation:pangle:7.8.0.8.0'
+    implementation 'com.google.ads.mediation:ironsource:9.2.0.0'
+    implementation 'com.unity3d.ads:unity-ads:4.16.5'
+    implementation 'com.google.ads.mediation:unity:4.16.5.0'
+    implementation 'com.google.ads.mediation:mintegral:17.0.41.0'
 }

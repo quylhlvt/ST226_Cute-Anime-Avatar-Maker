@@ -32,6 +32,19 @@
             android:layout_marginStart="20dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="05:00"
+            android:fontFamily="@font/janda_manatee_solid"
+            android:gravity="center"
+            android:textSize="24sp"
+            app:layout_constraintBottom_toBottomOf="@+id/imvBack"
+            android:textColor="@color/app_color"
+            android:id="@+id/countdown_timer"
+            app:layout_constraintTop_toTopOf="@+id/imvBack"
+            app:layout_constraintStart_toEndOf="@+id/imvBack"
+            app:layout_constraintEnd_toStartOf="@+id/btnSave"/>
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/btnSave"
             android:layout_width="32dp"
@@ -672,10 +685,10 @@
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
         </LinearLayout>
-        <!--        <FrameLayout-->
-        <!--            android:id="@+id/flNativeCollab"-->
-        <!--            android:layout_width="match_parent"-->
-        <!--            android:layout_height="wrap_content"-->
-        <!--            app:layout_constraintBottom_toBottomOf="parent" />-->
+                <FrameLayout
+                    android:id="@+id/flNativeCollab"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintBottom_toBottomOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

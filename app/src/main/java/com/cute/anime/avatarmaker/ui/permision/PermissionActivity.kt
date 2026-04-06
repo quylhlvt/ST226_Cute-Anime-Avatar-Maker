@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.text.TextUtils
+import android.view.LayoutInflater
 import android.view.View
 import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
@@ -20,6 +21,14 @@ import com.cute.anime.avatarmaker.utils.showDialogNotifiListener
 import com.cute.anime.avatarmaker.utils.showToast
 import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.databinding.ActivityPermissionBinding
+import com.cute.anime.avatarmaker.utils.hide
+import com.cute.anime.avatarmaker.utils.show
+import com.google.android.gms.ads.interstitial.InterstitialAd
+import com.google.android.gms.ads.nativead.NativeAd
+import com.google.android.gms.ads.nativead.NativeAdView
+import com.lvt.ads.callback.InterCallback
+import com.lvt.ads.callback.NativeCallback
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -32,7 +41,7 @@ class PermissionActivity : AbsBaseActivity<ActivityPermissionBinding>() {
     lateinit var sharedPreferenceUtils: SharedPreferenceUtils
 
     override fun getLayoutId(): Int = R.layout.activity_permission
-
+    private var inter: InterstitialAd? = null
     override fun initView() {
 
         MusicLocal.isInSplashOrTutorial = true
@@ -43,7 +52,28 @@ class PermissionActivity : AbsBaseActivity<ActivityPermissionBinding>() {
 //        )
 //        binding.actionBar.txtCustom.text = getString(R.string.permission)
 //        binding.actionBar.txtCustom.isSelected = true
+        Admob.getInstance().loadInterAds(this@PermissionActivity, getString(R.string.inter_per), object : InterCallback() {
+            override fun onAdLoadSuccess(interstitialAd: InterstitialAd?) {
+                super.onAdLoadSuccess(interstitialAd)
+                inter = interstitialAd
+            }
+        })
+        Admob.getInstance().loadNativeAd(this, getString(R.string.native_per), object : NativeCallback() {
+            override fun onAdFailedToLoad() {
+                super.onAdFailedToLoad()
+                binding.nativeAds.hide()
+            }
 
+            override fun onNativeAdLoaded(nativeAd: NativeAd?) {
+                super.onNativeAdLoaded(nativeAd)
+                binding.nativeAds.show()
+                val adView =
+                    LayoutInflater.from(this@PermissionActivity).inflate(R.layout.ads_native_big_btn_top, null) as NativeAdView
+                binding.nativeAds.removeAllViews()
+                binding.nativeAds.addView(adView)
+                Admob.getInstance().pushAdsToViewCustom(nativeAd, adView)
+            }
+        })
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             binding.rl4.visibility = View.VISIBLE
             binding.rl2.visibility = View.GONE
@@ -81,16 +111,18 @@ class PermissionActivity : AbsBaseActivity<ActivityPermissionBinding>() {
 
     override fun initAction() {
         binding.btnContinue.onSingleClick {
-
+            Admob.getInstance().showInterAds(this@PermissionActivity, inter, object : InterCallback() {
+                override fun onNextAction() {
+                    super.onNextAction()
                     sharedPreferenceUtils.putBooleanValue(CONST.PERMISON, true)
                     val intent = Intent(this@PermissionActivity, MainActivity::class.java)
                     intent.flags =
                         Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                     startActivity(intent)
                     finish()
-
+                }
+            })
         }
-
         binding.swiVibrate2.onSingleClick {
 
             handlePermissionRequest(isStorage = true)

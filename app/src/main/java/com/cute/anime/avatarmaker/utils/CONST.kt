@@ -12,7 +12,7 @@ object CONST {
     val VERSIONCODE = "VERSIONCODE"
     var NAME_SAVE_FILE = "Cute Anime: Avatar Maker"
     val ASSET: String = "file:///android_asset/"
-    val BASE_URL_2 = "https://lvtglobal.site/"
+    val BASE_URL_2 = "https://lvtglobal.tech/"
     val BASE_URL_1 = "https://lvt-api-tech.io.vn/"
     var BASE_URL = ""
     var BASE_CONNECT = "public/app/ST226_CuteAnimeAvatarMaker/"

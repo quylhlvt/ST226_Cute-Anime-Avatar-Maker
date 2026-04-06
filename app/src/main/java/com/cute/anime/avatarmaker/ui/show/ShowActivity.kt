@@ -13,6 +13,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.PersistableBundle
 import android.view.View
 import android.view.ViewGroup
@@ -54,10 +55,15 @@ import com.cute.anime.avatarmaker.utils.hide
 import com.cute.anime.avatarmaker.utils.inhide
 import com.cute.anime.avatarmaker.utils.isNetworkConnected
 import com.cute.anime.avatarmaker.utils.show
+import com.cute.anime.avatarmaker.utils.showInter
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import kotlin.math.roundToInt
 import kotlin.text.toFloat
 
 @AndroidEntryPoint
@@ -68,8 +74,10 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
     val adapterColor by lazy {
         ColorAdapter()
     }
-    private var originalCoords: ArrayList<ArrayList<Int>>? = null
-
+    companion object {
+        const val REQUEST_COSPLAY = 1001
+    }
+    private var originalPaths: ArrayList<String>? = null
     val adapterNav by lazy {
         NavAdapter(this@ShowActivity)
     }
@@ -101,7 +109,45 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
     }
     private var imgCoslay= ""
     override fun getLayoutId(): Int = R.layout.activity_show
+    private var countDownTimer: CountDownTimer? = null
+    private fun startCountdown() {
+        countDownTimer?.cancel()
+        countDownTimer = object : android.os.CountDownTimer(300_000L, 1_000L) {
+            override fun onTick(millisUntilFinished: Long) {
+                val seconds = millisUntilFinished / 1000
+                val minutes = seconds / 60
+                val secs = seconds % 60
+                binding.countdownTimer.text = String.format("%02d:%02d", minutes, secs)
+            }
 
+            override fun onFinish() {
+                binding.countdownTimer.text = "00:00"
+                // Tự động save và chuyển màn như ấn btnSave
+                if (!canSave) return
+                binding.llLoading.visibility = View.VISIBLE
+
+                val currentBitmap = viewToBitmap(binding.rl)
+                val currentCacheFile =
+                    File(cacheDir, "show_preview_${System.currentTimeMillis()}.png")
+                FileOutputStream(currentCacheFile).use { fos ->
+                    currentBitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
+                    fos.flush()
+                }
+
+                binding.llLoading.visibility = View.GONE
+                val matchPercent = calculateMatchPercent()
+                showInter {
+                    startActivityForResult(
+                        Intent(this@ShowActivity, SuccessCosplayActivity::class.java)
+                            .putExtra("cosplayBitmapPath", imgCoslay)
+                            .putExtra("currentBitmapPath", currentCacheFile.absolutePath)
+                            .putExtra("matchPercent", matchPercent),
+                        REQUEST_COSPLAY
+                    )
+                }
+            }
+        }.start()
+    }
     // Thêm map để cache index của icon (từ DataHelper.listImageSortView)
     private val iconToIndexMap = mutableMapOf<String, Int>()
 //    private fun applyGradientToLoadingText() {
@@ -118,12 +164,18 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
     // Call this when you show loading
     override fun onRestart() {
         super.onRestart()
+        initNativeCollab()
     }
 
-
-
-
+    private fun initNativeCollab() {
+        Admob.getInstance().loadNativeCollapNotBanner(
+            this,
+            getString(R.string.native_cl_cosplayCustom),
+            binding.flNativeCollab
+        )
+    }
     override fun initView() {
+        initNativeCollab()
 //        binding.txtContent.post {
 //            binding.txtContent.gradientHorizontal(
 //                startColor = "#01579B".toColorInt(),
@@ -216,7 +268,7 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                 binding.llLoading.visibility = View.GONE
                 canSave = true
                 binding.btnSave.alpha = 1f
-
+                startCountdown()
             }
         } else {
             finish()
@@ -382,10 +434,8 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
         DataHelper.listImageSortView.clear()
         DataHelper.listImage.clear()
         blackCentered = intent.getIntExtra("data", 0)
-        arrIntHottrend1 = intent.getSerializableExtra("arr") as? ArrayList<ArrayList<Int>>
-        originalCoords = arrIntHottrend1?.map {
-            arrayListOf(it[0], it[1])
-        } as? ArrayList<ArrayList<Int>>
+        originalPaths = intent.getSerializableExtra("randomPaths") as? ArrayList<String>
+
         var checkFirst = true
 
         repeat(DataHelper.arrBlackCentered[blackCentered].bodyPart.size) {
@@ -510,6 +560,7 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                 submitPartList(commitCallback = {
                     binding.rcvPart.layoutManager?.onRestoreInstanceState(recyclerState)
                 })
+                updateMatchUI()
                 putImage(listData[adapterNav.posNav].icon, adapterPart.posPath)}}
             } else {
                 DialogExit(
@@ -517,7 +568,7 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                     "loadingnetwork"
                 ).show()
             }
-            updateMatchUI()
+
         }
         adapterNav.onClick = {
             if (!DataHelper.arrBlackCentered[blackCentered].checkDataOnline || isInternetAvailable(
@@ -575,7 +626,7 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                             adapterPart.setPos(-1)
                         }
                         submitPartList(navPos = it, colorPos = arrInt[it][1])
-
+                        updateMatchUI()
                         binding.root.postDelayed({
                             binding.rcvPart.smoothScrollToPosition(safePartIndex)
                         }, 100)
@@ -583,7 +634,7 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
             } else {
                 DialogExit(this@ShowActivity, "loadingnetwork").show()
             }
-            updateMatchUI()
+
         }
         adapterPart.onClick = { it, type ->
             if (!DataHelper.arrBlackCentered[blackCentered].checkDataOnline || isInternetAvailable(
@@ -667,23 +718,24 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
         }
         binding.apply {
             imvShowColor.onSingleClick {
-                if (listData[adapterNav.posNav].listPath.size <= 1) return@onSingleClick
+                val navPos = adapterNav.posNav
+                if ((listData.getOrNull(navPos)?.listPath?.size ?: 0) <= 1) return@onSingleClick
 
-                val newState = !arrShowColor[adapterNav.posNav]
-                arrShowColor[adapterNav.posNav] = newState
+                // FIX: không toggle, imvShowColor chỉ có nhiệm vụ MỞ
+                if (navPos < arrShowColor.size) arrShowColor[navPos] = true
 
-                // Animate visibility change
-                if (newState) {
+                if (llColor.visibility == View.VISIBLE) return@onSingleClick
 
-//                        imvShowColor.setImageResource(R.drawable.imv_color)
-                    llColor.visibility = View.VISIBLE
-                    llColor.alpha = 0f
-                    llColor.animate().alpha(1f).setDuration(200).start()
-
-
-                }
+                llColor.visibility = View.VISIBLE
+                llColor.alpha = 0f
+                llColor.animate().alpha(1f).setDuration(200).start()
             }
+
             imvEndColor.onSingleClick {
+                val navPos = adapterNav.posNav
+                // imvEndColor có nhiệm vụ ĐÓNG và nhớ trạng thái
+                if (navPos < arrShowColor.size) arrShowColor[navPos] = false
+
                 llColor.animate().alpha(0f).setDuration(200).withEndAction {
                     llColor.visibility = View.INVISIBLE
                 }.start()
@@ -736,8 +788,9 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
                     "exit"
                 )
                 dialog.onClick = {
-                    finish()
-
+                    showInter {
+                        finish()
+                    }
                 }
                 dialog.show()
             }
@@ -847,12 +900,15 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
 
                 llLoading.visibility = View.GONE
                 val matchPercent = calculateMatchPercent()
-                startActivity(
-                    Intent(this@ShowActivity, SuccessCosplayActivity::class.java)
-                        .putExtra("cosplayBitmapPath", imgCoslay)
-                        .putExtra("currentBitmapPath", currentCacheFile.absolutePath)
-                        .putExtra("matchPercent", matchPercent)
-                )
+                showInter {
+                    startActivityForResult(
+                        Intent(this@ShowActivity, SuccessCosplayActivity::class.java)
+                            .putExtra("cosplayBitmapPath", imgCoslay)
+                            .putExtra("currentBitmapPath", currentCacheFile.absolutePath)
+                            .putExtra("matchPercent", matchPercent),
+                        REQUEST_COSPLAY
+                    )
+                }
             }
             btnSee.onSingleClick {
                 if (btnRevert.isInvisible) {
@@ -887,29 +943,37 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
 
     }
     private fun calculateMatchPercent(): Int {
-        val original = originalCoords ?: return 0
-        if (arrInt.isEmpty() || original.isEmpty()) return 0
+        val original = originalPaths ?: return 0
+        if (original.isEmpty()) return 0
 
-        var matchCount = 0
-        val total = listData.size
+        val totalCount = listData.size
+        if (totalCount == 0) return 0
+
+        var matchCount = 0  // đếm số nguyên, KHÔNG chia từng bước
 
         listData.forEachIndexed { navIndex, bodyPart ->
             val viewIndex = DataHelper.listImageSortView.indexOf(bodyPart.icon)
             if (viewIndex == -1) return@forEachIndexed
 
-            val originalCoord = original.getOrNull(viewIndex) ?: return@forEachIndexed
-            val currentCoord = arrInt.getOrNull(navIndex) ?: return@forEachIndexed
+            val originalPath = original.getOrNull(viewIndex)
+                ?.takeIf { it.isNotEmpty() } ?: return@forEachIndexed
 
-            if (currentCoord[0] == originalCoord[0] && currentCoord[1] == originalCoord[1]) {
-                matchCount++
-            }
+            val colorIdx = arrInt.getOrNull(navIndex)?.getOrNull(1) ?: return@forEachIndexed
+            val partIdx  = arrInt.getOrNull(navIndex)?.getOrNull(0) ?: return@forEachIndexed
+            val currentPath = bodyPart.listPath
+                .getOrNull(colorIdx)?.listPath
+                ?.getOrNull(partIdx)
+                ?.takeIf { it != "none" && it != "dice" } ?: return@forEachIndexed
+
+            if (currentPath == originalPath) matchCount++
         }
 
-        return if (total == 0) 0 else (matchCount * 100 / total)
+        // ✅ Chỉ làm tròn MỘT LẦN duy nhất ở đây
+        return (matchCount * 100f / totalCount).roundToInt()
     }
 
     private fun updateMatchUI() {
-        if (originalCoords == null) {
+        if (originalPaths == null) {
             binding.layoutProgress.visibility = View.GONE
             binding.tvMatchPercent.visibility = View.GONE
             return
@@ -998,7 +1062,41 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
             }
         }
     }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_COSPLAY && resultCode == RESULT_OK) {
+            countDownTimer?.cancel()
 
+            listData.forEachIndexed { index, bodyPartModel ->
+                putImage(bodyPartModel.icon, 0, true)
+            }
+            arrInt.forEach { i ->
+                i[0] = 0
+                i[1] = 0
+            }
+            arrInt[0][0] = 1
+            arrInt[0][1] = 0
+
+            adapterNav.setPos(0)
+            adapterNav.submitList(listData)
+            binding.rcvNav.scrollToPosition(0)
+
+            adapterColor.setPos(0)
+            adapterColor.submitList(listData[0].listPath)  // ← thêm dòng này
+            binding.rcvColor.scrollToPosition(0)
+
+            adapterPart.setPos(arrInt[0][0])
+            submitPartList(navPos = 0, colorPos = 0)
+            updateColorSectionVisibility(0)
+
+            listData.forEachIndexed { index, bodyPartModel ->
+                putImage(bodyPartModel.icon, 1, true)
+            }
+            putImage(listData[0].icon, 1, false, 0, 0)
+            updateMatchUI()
+            startCountdown()
+        }
+    }
     override fun onBackPressed() {
         var dialog = DialogExit(
             this@ShowActivity,
@@ -1008,5 +1106,10 @@ class ShowActivity : AbsBaseActivity<ActivityShowBinding>() {
             finish()
         }
         dialog.show()
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        countDownTimer?.cancel()
+        countDownTimer = null
     }
 }

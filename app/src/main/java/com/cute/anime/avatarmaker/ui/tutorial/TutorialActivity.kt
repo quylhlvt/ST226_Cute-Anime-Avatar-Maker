@@ -7,6 +7,8 @@ import android.os.Looper
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.viewpager2.widget.CompositePageTransformer
 import androidx.viewpager2.widget.MarginPageTransformer
 import androidx.viewpager2.widget.ViewPager2
@@ -20,6 +22,7 @@ import com.cute.anime.avatarmaker.utils.dpToPx
 import com.cute.anime.avatarmaker.utils.music.MusicLocal
 import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.databinding.ActivityTutorialBinding
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -31,7 +34,13 @@ class TutorialActivity : AbsBaseActivity<ActivityTutorialBinding>() {
     private var viewPagerAdapter: ViewPagerAdapter? = null
     override fun getLayoutId(): Int = R.layout.activity_tutorial
     override fun initView() {
-
+        Admob.getInstance().loadNativeAll(this, getString(R.string.native_all))
+        Admob.getInstance().loadNativeAd(
+            this,
+            getString(R.string.native_intro),
+            binding.nativeAds,
+            R.layout.ads_native_medium_btn_bottom_2
+        )
         MusicLocal.isInSplashOrTutorial = true
         var data = arrayListOf<TutorialModel>(
             TutorialModel(
@@ -68,7 +77,9 @@ class TutorialActivity : AbsBaseActivity<ActivityTutorialBinding>() {
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-
+                binding.nativeAds.isVisible = position != 0
+                binding.btnNext.isGone = position != 0
+                binding.txtNext.isVisible = position != 0
                 Handler(Looper.myLooper()!!).postDelayed({  addBottomDots(position) },100)
             }
         })

@@ -53,6 +53,9 @@ import com.cute.anime.avatarmaker.utils.DataHelper.dp
 import com.cute.anime.avatarmaker.utils.inhide
 import com.cute.anime.avatarmaker.utils.onClickCustom
 import com.cute.anime.avatarmaker.utils.pickImage
+import com.cute.anime.avatarmaker.utils.showInter
+import com.cute.anime.avatarmaker.utils.showInterAll
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -60,6 +63,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
+import kotlin.collections.get
+import kotlin.compareTo
+import kotlin.text.get
 
 @AndroidEntryPoint
 class BackgroundActivity : AbsBaseActivity<ActivityBackgroundBinding>() {
@@ -87,12 +93,14 @@ class BackgroundActivity : AbsBaseActivity<ActivityBackgroundBinding>() {
 //    }
     override fun onRestart() {
         super.onRestart()
+        initNativeCollab()
 
     }
-
-
-
+    private fun initNativeCollab() {
+        Admob.getInstance().loadNativeCollapNotBanner(this, getString(R.string.native_cl_bg), binding.flNativeCollab)
+    }
     override fun initView() {
+        initNativeCollab()
 //        binding.txtContent.post {
 //            binding.txtContent.gradientHorizontal(
 //                startColor = "#01579B".toColorInt(),
@@ -267,14 +275,11 @@ class BackgroundActivity : AbsBaseActivity<ActivityBackgroundBinding>() {
     @SuppressLint("UseCompatLoadingForDrawables", "ClickableViewAccessibility")
     override fun initAction() {
         binding.apply {
-
-
             main.onSingleClick {
                 viewModel.setIsFocusEditText(false)
                 hideKeyboard()
                 clearFocus()
             }
-
             btnBg.onSingleClick {
                 hideKeyboard()
                 selectBottomTab(btnBg)
@@ -348,6 +353,7 @@ class BackgroundActivity : AbsBaseActivity<ActivityBackgroundBinding>() {
             btnReset.onSingleClick {
                 viewModel.setIsFocusEditText(false)
                 hideKeyboard()
+                binding.iclText.edt.clearFocus()
                 var dialog = DialogExit(
                     this@BackgroundActivity,
                     "reset"
@@ -386,6 +392,12 @@ class BackgroundActivity : AbsBaseActivity<ActivityBackgroundBinding>() {
                         }
                     }
                     dialog.dismiss()
+                    showInter(){
+                        binding.iclText.edt.clearFocus()
+                        viewModel.setIsFocusEditText(false)
+                        hideKeyboard()
+                    }
+
                 }
                 dialog.show()
             }
@@ -406,12 +418,14 @@ class BackgroundActivity : AbsBaseActivity<ActivityBackgroundBinding>() {
                         if (it) {
                             binding.llLoading.visibility = View.GONE
 //                            binding.animationView.hide()
-                            startActivity(
-                                Intent(
-                                    this@BackgroundActivity,
-                                    SuccessActivity::class.java
-                                ).putExtra("path", path)
-                            )
+                            showInter {
+                                startActivity(
+                                    Intent(
+                                        this@BackgroundActivity,
+                                        SuccessActivity::class.java
+                                    ).putExtra("path", path)
+                                )
+                            }
 
                         } else {
                             llLoading.visibility = View.GONE

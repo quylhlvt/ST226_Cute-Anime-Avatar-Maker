@@ -16,6 +16,7 @@ import com.cute.anime.avatarmaker.utils.SystemUtils
 import com.cute.anime.avatarmaker.utils.onSingleClick
 import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.databinding.ActivityLanguageBinding
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlin.text.equals
@@ -31,7 +32,12 @@ class LanguageActivity : AbsBaseActivity<ActivityLanguageBinding>() {
 
     override fun getLayoutId(): Int = R.layout.activity_language
     override fun initView() {
-
+        Admob.getInstance().loadNativeAd(
+            this@LanguageActivity,
+            getString(R.string.native_language),
+            binding.nativeAds,
+            R.layout.ads_native_big_btn_top
+        )
         codeLang = providerSharedPreference.getStringValue("language")
         if (codeLang.equals("")) {
             binding.icBack.visibility = View.GONE

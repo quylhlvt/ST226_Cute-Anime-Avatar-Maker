@@ -30,7 +30,9 @@ import com.cute.anime.avatarmaker.R
 import com.cute.anime.avatarmaker.databinding.ActivityMainBinding
 import com.cute.anime.avatarmaker.ui.cosplay.CosplayActivity
 import com.cute.anime.avatarmaker.ui.randomone.RandomCatActivity
+import com.cute.anime.avatarmaker.utils.showInter
 import com.cute.anime.avatarmaker.utils.showToast
+import com.lvt.ads.util.Admob
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -77,13 +79,15 @@ class MainActivity : AbsBaseActivity<ActivityMainBinding>() {
         super.onRestart()
         val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
         registerReceiver(networkReceiver, filter)
+        initNativeCollab()
     }
-
-
+    private fun initNativeCollab() {
+        Admob.getInstance().loadNativeCollapNotBanner(this, getString(R.string.native_cl_home), binding.flNativeCollab)
+    }
     override fun initView() {
-
         MusicLocal.isInSplashOrTutorial = false
-
+        Admob.getInstance().loadInterAll(this@MainActivity, getString(R.string.inter_all))
+        initNativeCollab()
         binding.apply {
             tv1.post {
                 tv1.isSelected = true
@@ -218,12 +222,14 @@ class MainActivity : AbsBaseActivity<ActivityMainBinding>() {
             }
             btnRandom.onSingleClick {
                 if (isDataReady()) {
-                    startActivity(
-                        newIntent(
-                            applicationContext,
-                            RandomCatActivity::class.java
+                    showInter {
+                        startActivity(
+                            newIntent(
+                                applicationContext,
+                                RandomCatActivity::class.java
+                            )
                         )
-                    )
+                    }
                 } else {
                     lifecycleScope.launch {
                         val dialog= DialogExit(
@@ -238,12 +244,14 @@ class MainActivity : AbsBaseActivity<ActivityMainBinding>() {
             }
             btnMyWork.onSingleClick {
                 if (isDataReady()) {
-                    startActivity(
-                        newIntent(
-                            applicationContext,
-                            MyCreationActivity::class.java
+                    showInter {
+                        startActivity(
+                            newIntent(
+                                applicationContext,
+                                MyCreationActivity::class.java
+                            )
                         )
-                    )
+                    }
                 } else {
                     showToast(this@MainActivity,R.string.please_wait_a_few_seconds_for_data_to_load)
                 }
