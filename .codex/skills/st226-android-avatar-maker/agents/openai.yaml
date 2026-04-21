@@ -1,0 +1,4 @@
+interface:
+  display_name: "ST226 Avatar Maker"
+  short_description: "Work on the ST226 Android avatar-maker codebase"
+  default_prompt: "Use $st226-android-avatar-maker to analyze or modify the ST226 Cute Anime Avatar Maker Android project safely."
